@@ -13,7 +13,6 @@ Features:
 
 import json
 import os
-import sys
 import time
 from datetime import timedelta
 
@@ -60,7 +59,7 @@ def on_message(client, userdata, msg):
         topic = msg.topic
         payload = msg.payload.decode()
 
-        print(f"\n📨 [MQTT MESSAGE RECEIVED]")
+        print("\n📨 [MQTT MESSAGE RECEIVED]")
         print(f"   Topic: {topic}")
         print(f"   Payload: {payload}")
 
@@ -69,7 +68,7 @@ def on_message(client, userdata, msg):
             data = json.loads(payload)
             print(f"   Parsed: {json.dumps(data, indent=6)}")
         except json.JSONDecodeError:
-            print(f"   (Not JSON format)")
+            print("   (Not JSON format)")
 
         print("-" * 60)
 
@@ -95,8 +94,8 @@ def get_schedules(device_id):
     cursor = conn.cursor(dictionary=True)
 
     cursor.execute(
-        """SELECT waktu, porsi_gram 
-           FROM feeding_schedules 
+        """SELECT waktu, porsi_gram
+           FROM feeding_schedules
            WHERE device_id = %s AND is_active = 1
            ORDER BY waktu""",
         (device_id,),
@@ -150,15 +149,15 @@ def trigger_manual_sync(client, device_id):
 
     # Publish to MQTT
     topic = f"petfeed/{device_sn}/perintah"
-    print(f"\n📤 [PUBLISHING]")
+    print("\n📤 [PUBLISHING]")
     print(f"   Topic: {topic}")
     print(f"   Payload: {payload}")
 
     result = client.publish(topic, payload, qos=1)
 
     if result.rc == mqtt.MQTT_ERR_SUCCESS:
-        print(f"✅ [SUCCESS] Schedule sync sent to ESP32!")
-        print(f"\n⏳ Waiting for ESP32 response...")
+        print("✅ [SUCCESS] Schedule sync sent to ESP32!")
+        print("\n⏳ Waiting for ESP32 response...")
         print(f"   (ESP32 should publish to petfeed/{device_sn}/status)")
     else:
         print(f"❌ [ERROR] Failed to publish (error code: {result.rc})")
@@ -166,24 +165,24 @@ def trigger_manual_sync(client, device_id):
 
 def test_manual_feed(client, device_sn, porsi=10):
     """Test manual feed command"""
-    print(f"\n🧪 [TEST] Sending manual feed command...")
+    print("\n🧪 [TEST] Sending manual feed command...")
     print(f"   Device: {device_sn}")
     print(f"   Amount: {porsi}g")
 
     payload = json.dumps({"action": "feed", "porsi": porsi, "metode": "manual"})
     topic = f"petfeed/{device_sn}/perintah"
 
-    print(f"\n📤 [PUBLISHING]")
+    print("\n📤 [PUBLISHING]")
     print(f"   Topic: {topic}")
     print(f"   Payload: {payload}")
 
     result = client.publish(topic, payload, qos=1)
 
     if result.rc == mqtt.MQTT_ERR_SUCCESS:
-        print(f"✅ [SUCCESS] Manual feed command sent!")
-        print(f"⏳ ESP32 should execute and publish status...")
+        print("✅ [SUCCESS] Manual feed command sent!")
+        print("⏳ ESP32 should execute and publish status...")
     else:
-        print(f"❌ [ERROR] Failed to publish")
+        print("❌ [ERROR] Failed to publish")
 
 
 def main():

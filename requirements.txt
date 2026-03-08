@@ -14,12 +14,10 @@ paho-mqtt==1.6.1
 # Environment Variables
 python-dotenv==1.0.0
 
-# Development Dependencies
-black==24.1.1
-flake8==7.0.0
-isort==5.13.2
+# Development & Linting
+ruff==0.11.0
 
-# Production Server (Optional untuk development)
+# Production Server
 gunicorn==21.2.0
 
 # Development Tools (Optional)

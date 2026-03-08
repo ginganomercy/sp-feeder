@@ -1,0 +1,31 @@
+[tool.ruff]
+# Target Python version sesuai Dockerfile
+target-version = "py310"
+line-length = 120
+
+# Folder yang di-skip
+exclude = [
+    "venv",
+    ".venv",
+    "__pycache__",
+    "*.pyc",
+    "migrations",
+    "setup_database.py",  # script sekali pakai
+]
+
+[tool.ruff.lint]
+# Rules yang diaktifkan:
+# E = pycodestyle errors (syntax, indentation)
+# F = pyflakes (unused import, undefined name)
+# W = pycodestyle warnings
+# I = isort (import ordering)
+select = ["E", "F", "W", "I"]
+
+# Abaikan rules berikut agar tidak terlalu ketat:
+ignore = [
+    "E501",  # line too long — sudah di-handle line-length=120
+    "F401",  # unused import — bisa terlalu noisy di __init__.py
+]
+
+# Boleh autofix semua yang bisa di-fix
+fixable = ["ALL"]
