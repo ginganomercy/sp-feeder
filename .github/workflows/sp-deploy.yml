@@ -11,10 +11,10 @@ env:
 
 jobs:
   # ─────────────────────────────────────────────────────
-  # JOB 0: Lint dengan ruff
+  # JOB 0: Lint Web App
   # ─────────────────────────────────────────────────────
   lint:
-    name: Lint (ruff)
+    name: Lint Web App
     runs-on: ubuntu-latest
 
     steps:
@@ -113,9 +113,24 @@ jobs:
             docker image prune -af --filter "until=24h" || true
           EOF
 
-      - name: Health check
+      - name: Health check (retry up to 5 min)
         run: |
-          sleep 40
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "curl -sf http://localhost:8000/ > /dev/null && echo '✅ Healthy' || \
-            (docker compose -f ${{ secrets.DEPLOY_PATH }}/docker-compose.yml logs web --tail 50 && exit 1)"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} bash << 'EOF'
+            echo "⏳ Waiting for app to be ready..."
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost:8000/ > /dev/null 2>&1; then
+                echo "✅ Healthy after ${i}x10s = $((i*10))s"
+                exit 0
+              fi
+              echo "  Attempt $i/30 — not ready yet, waiting 10s..."
+              sleep 10
+            done
+            echo "❌ Health check failed after 5 minutes!"
+            echo "--- Container status ---"
+            docker compose -f ${{ secrets.DEPLOY_PATH }}/docker-compose.yml ps
+            echo "--- Web logs (last 50) ---"
+            docker compose -f ${{ secrets.DEPLOY_PATH }}/docker-compose.yml logs web --tail 50
+            echo "--- DB logs (last 20) ---"
+            docker compose -f ${{ secrets.DEPLOY_PATH }}/docker-compose.yml logs db --tail 20
+            exit 1
+          EOF
