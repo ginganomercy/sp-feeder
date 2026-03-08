@@ -1,0 +1,64 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Database
+*.sql
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+*.bak
+
+# Documentation
+docs/_build/
+*.md
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Project specific
+smart_pet_feeder.sql
+setup_database.py
+QUICKSTART_PHASE1.md
+README.md
+SETUP_DEVELOPMENT.md

@@ -1,0 +1,331 @@
+{% extends 'layout.html' %}
+
+{% block title %}Hubungkan Alat - Smart Pet Feeder{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Gradient & Background Styles */
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.3);
+    }
+
+    body {
+        background: linear-gradient(135deg, #fdfcf0 0%, #fff5eb 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Glassmorphism Card */
+    .onboarding-glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid var(--glass-border);
+        border-radius: 35px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+        padding: 40px 30px;
+        width: 100%;
+        max-width: 450px;
+        text-align: center;
+        animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Morphing Icon Header */
+    .hero-icon-animated {
+        width: 75px;
+        height: 75px;
+        background: linear-gradient(135deg, #54a0ff 0%, #00d2ff 100%);
+        color: white;
+        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 32px;
+        box-shadow: 0 10px 20px rgba(84, 160, 255, 0.2);
+        animation: morphIcon 8s ease-in-out infinite;
+    }
+
+    @keyframes morphIcon {
+        0% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+        50% { border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%; }
+        100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+    }
+
+    /* Scanner Viewfinder Styles */
+    #reader-wrapper {
+        position: relative;
+        border-radius: 30px;
+        overflow: hidden;
+        border: 6px solid #fff;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        background: #000;
+        aspect-ratio: 1 / 1;
+    }
+
+    .scanner-overlay-custom {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 5;
+    }
+
+    /* Target Box Corners */
+    .corner {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        border: 4px solid var(--primary-color);
+        z-index: 10;
+    }
+    .top-left { top: 40px; left: 40px; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
+    .top-right { top: 40px; right: 40px; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
+    .bottom-left { bottom: 40px; left: 40px; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
+    .bottom-right { bottom: 40px; right: 40px; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
+
+    /* Scanning Line Animation */
+    .scan-line {
+        position: absolute;
+        width: calc(100% - 80px);
+        height: 3px;
+        background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+        left: 40px;
+        top: 40px;
+        animation: scanAnim 3s linear infinite;
+        box-shadow: 0 0 15px var(--primary-color);
+        z-index: 11;
+    }
+
+    @keyframes scanAnim {
+        0% { top: 40px; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: calc(100% - 40px); opacity: 0; }
+    }
+
+    .status-pill {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(5px);
+        border-radius: 15px;
+        padding: 10px 20px;
+        font-weight: 700;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        margin-top: -20px;
+        position: relative;
+        z-index: 10;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        border: 1px solid #eee;
+    }
+
+    .back-btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 15px;
+        color: #2d3436;
+        text-decoration: none;
+        transition: 0.3s;
+        position: absolute;
+        left: 20px;
+        top: 20px;
+    }
+
+    .back-btn:hover {
+        background: white;
+        color: var(--primary-color);
+    }
+
+    /* Manual Input Section */
+    #manual-input-container {
+        display: none;
+        animation: fadeIn 0.4s ease;
+        margin-top: 20px;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .custom-input {
+        background: rgba(255, 255, 255, 0.5);
+        border: 2px solid transparent;
+        border-radius: 18px;
+        padding: 12px 18px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        color: #2d3436;
+        width: 100%;
+        text-align: center;
+    }
+
+    .custom-input:focus {
+        background: #fff;
+        border-color: var(--primary-color);
+        box-shadow: 0 5px 15px rgba(255, 159, 67, 0.1);
+        outline: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="onboarding-glass-card">
+    <!-- Header Navigation -->
+    <div class="d-flex align-items-center mb-4 text-start">
+        <a href="{{ url_for('setup_pet') }}" class="back-btn d-flex align-items-center justify-content-center">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <h4 class="fw-bold mb-0 w-100 text-center" style="color: #2d3436; margin-top: 10px;">Hubungkan Alat</h4>
+    </div>
+
+    <div class="text-center mb-4">
+        <div class="hero-icon-animated">
+            <i class="fas fa-qrcode"></i>
+        </div>
+        <p class="text-muted small px-3">Arahkan kamera ke <b>QR Code</b> yang tertempel pada perangkat Smart Pet Feeder Anda.</p>
+    </div>
+
+    <!-- Scanner Container -->
+    <div id="reader-wrapper" class="mb-4">
+        <div id="reader" style="width: 100%;"></div>
+        
+        <!-- UI Elements Overlay -->
+        <div class="scanner-overlay-custom">
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+            <div class="scan-line"></div>
+        </div>
+    </div>
+
+    <!-- Dynamic Status Message -->
+    <div id="status-container" class="text-center">
+        <div id="scanning-badge" class="status-pill text-primary">
+            <i class="fas fa-circle-notch fa-spin me-2"></i> MENCARI KODE...
+        </div>
+        
+        <div id="success-message" class="d-none">
+            <div class="alert alert-success d-flex align-items-center justify-content-center" style="border-radius: 20px; border: none; font-weight: 700;">
+                <i class="fas fa-check-circle me-2"></i> ALAT TERIDENTIFIKASI!
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Input Form (Pengganti Alert) -->
+    <div id="manual-input-container">
+        <div class="glass-card p-3" style="border-radius: 25px; background: rgba(255,255,255,0.4);">
+            <label class="fw-bold small text-muted mb-2 d-block text-uppercase" style="letter-spacing: 1px;">Input ID Manual</label>
+            <input type="text" id="manual-device-id" class="custom-input mb-3" placeholder="Contoh: PET-A1B2C3">
+            <div class="d-grid">
+                <button onclick="handleManualSubmit()" class="btn btn-primary rounded-pill fw-bold py-2 shadow-sm">
+                    HUBUNGKAN ALAT
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 pt-2 border-top border-light">
+        <button id="toggle-manual-btn" onclick="toggleManualInput()" class="btn btn-link text-muted text-decoration-none small fw-bold">
+            <i class="fas fa-keyboard me-2"></i> MASUKKAN ID MANUAL
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Library QR Scanner -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+    const statusBadge = document.getElementById('scanning-badge');
+    const successMsg = document.getElementById('success-message');
+    const scanLine = document.querySelector('.scan-line');
+    const manualContainer = document.getElementById('manual-input-container');
+    const toggleBtn = document.getElementById('toggle-manual-btn');
+
+    function onScanSuccess(decodedText, decodedResult) {
+        processDeviceIdentification(decodedText);
+    }
+
+    function processDeviceIdentification(deviceId) {
+        // Hentikan scanner & animasi
+        if (typeof html5QrcodeScanner !== 'undefined' && html5QrcodeScanner.getState() === 2) {
+            html5QrcodeScanner.clear();
+        }
+        
+        if(scanLine) scanLine.style.display = 'none';
+        if(manualContainer) manualContainer.style.display = 'none';
+        if(toggleBtn) toggleBtn.style.display = 'none';
+        
+        // Update UI
+        statusBadge.classList.add('d-none');
+        successMsg.classList.remove('d-none');
+        
+        // Haptic feedback (jika di mobile)
+        if (navigator.vibrate) navigator.vibrate(100);
+
+        // Redirect ke API pairing
+        setTimeout(() => {
+            window.location.href = `/api/pair_device?device_id=${deviceId}`;
+        }, 1200);
+    }
+
+    function onScanFailure(error) {
+        // Abaikan error saat proses scanning berlangsung
+    }
+
+    // Inisialisasi Scanner
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", 
+        { 
+            fps: 20, 
+            qrbox: { width: 220, height: 220 },
+            aspectRatio: 1.0,
+            showTorchButtonIfSupported: true
+        }, 
+        /* verbose= */ false
+    );
+    
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+
+    // Fungsi untuk menampilkan formulir manual di bawah scanner
+    function toggleManualInput() {
+        if (manualContainer.style.display === 'block') {
+            manualContainer.style.display = 'none';
+            toggleBtn.innerHTML = '<i class="fas fa-keyboard me-2"></i> MASUKKAN ID MANUAL';
+        } else {
+            manualContainer.style.display = 'block';
+            toggleBtn.innerHTML = '<i class="fas fa-times me-2"></i> BATALKAN MANUAL';
+            // Scroll otomatis ke bawah agar input terlihat
+            setTimeout(() => {
+                manualContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 100);
+        }
+    }
+
+    // Menangani pengiriman ID manual dari form
+    function handleManualSubmit() {
+        const inputId = document.getElementById('manual-device-id').value.trim();
+        if (inputId) {
+            processDeviceIdentification(inputId);
+        } else {
+            // Berikan sedikit feedback visual jika kosong
+            const inputEl = document.getElementById('manual-device-id');
+            inputEl.style.borderColor = 'red';
+            setTimeout(() => inputEl.style.borderColor = 'transparent', 1000);
+        }
+    }
+</script>
+{% endblock %}

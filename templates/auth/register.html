@@ -1,0 +1,177 @@
+{% extends 'layout.html' %}
+
+{% block title %}Daftar - Smart Pet Feeder{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.3);
+    }
+
+    body {
+        background: linear-gradient(135deg, #fdfcf0 0%, #fff5eb 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .auth-glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid var(--glass-border);
+        border-radius: 35px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+        padding: 20px 30px;
+        width: 100%;
+        max-width: 420px;
+        animation: slideUp 0.8s ease-out;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .brand-section {
+        margin-bottom: 5px;
+    }
+
+    /* Menghapus container biru & animasi morph agar logo oranye tampil langsung */
+    .brand-logo-display {
+        width: 170px;
+        height: 170px;
+        margin: 0 auto 1px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+    }
+
+    .brand-logo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        /* Menghapus filter invert agar warna asli logo (oranye) terlihat */
+        filter: drop-shadow(0 5px 15px rgba(255, 159, 67, 0.2));
+    }
+
+    .brand-logo-display:hover {
+        transform: scale(1.05);
+    }
+
+    .app-name {
+        color: #2d3436;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        margin-bottom: 10px;
+    }
+
+    .form-label-small {
+        font-size: 11px;
+        font-weight: 700;
+        color: #b2bec3;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-left: 15px;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .custom-input {
+        background: rgba(255, 255, 255, 0.5);
+        border: 2px solid transparent;
+        border-radius: 18px;
+        padding: 12px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        color: #2d3436;
+    }
+
+    .custom-input:focus {
+        background: #fff;
+        border-color: var(--primary-color); /* Fokus input menjadi oranye */
+        box-shadow: 0 5px 15px rgba(255, 159, 67, 0.1);
+        outline: none;
+    }
+
+    /* Tombol tetap oranye sesuai brand */
+    .btn-register {
+        background: linear-gradient(135deg, #ff9f43 0%, #ff6b6b 100%);
+        border: none;
+        border-radius: 20px;
+        padding: 16px;
+        color: white;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+        transition: all 0.3s ease;
+        margin-top: 10px;
+    }
+
+    .btn-register:hover {
+        transform: translateY(-3px);
+        filter: brightness(1.05);
+    }
+
+    /* Tautan bawah diubah menjadi oranye agar senada */
+    .login-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .login-link:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-glass-card">
+    <!-- Header Branding Dengan Logo Langsung -->
+    <div class="text-center brand-section">
+        <div class="brand-logo-display">
+            <!-- Menampilkan Logo Oranye Secara Langsung tanpa background biru -->
+            <img src="{{ url_for('static', filename='img/logo.png') }}" 
+                 alt="Logo" 
+                 class="brand-logo-img" 
+                 onerror="this.parentElement.innerHTML='<i class=\'fas fa-paw fa-3x text-primary\'></i>'">
+        </div>
+        <h2 class="app-name">Buat Akun</h2>
+        <p class="text-muted small">Mulai perjalanan nutrisi cerdas untuk anabul kesayangan Anda hari ini.</p>
+    </div>
+
+    <!-- Form Registrasi -->
+    <form action="{{ url_for('register') }}" method="POST">
+        <div class="mb-3">
+            <label class="form-label-small">Username</label>
+            <input type="text" name="username" class="form-control custom-input w-100" placeholder="Pilih username" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label-small">Email</label>
+            <input type="email" name="email" class="form-control custom-input w-100" placeholder="contoh@mail.com" required>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label-small">Password</label>
+            <input type="password" name="password" class="form-control custom-input w-100" placeholder="Minimal 6 karakter" required>
+        </div>
+
+        <div class="d-grid mt-4">
+            <button type="submit" class="btn btn-register shadow">
+                DAFTAR SEKARANG <i class="fas fa-rocket ms-2"></i>
+            </button>
+        </div>
+    </form>
+
+    <div class="text-center mt-2 pt-3 border-top border-light border-opacity-50">
+        <p class="small text-muted mb-0">
+            Sudah terdaftar? <a href="{{ url_for('login') }}" class="login-link">Masuk di Sini</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

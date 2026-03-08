@@ -1,0 +1,457 @@
+{% extends 'layout.html' %}
+
+{% block title %}Jadwal Makan - Smart Pet Feeder{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Gradient & Background Styles */
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.3);
+    }
+
+    body {
+        background: linear-gradient(135deg, #fdfcf0 0%, #fff5eb 100%);
+        min-height: 100vh;
+    }
+
+    /* Glassmorphism Cards */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 28px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    }
+
+    .schedule-container { 
+        padding-bottom: 120px; 
+    }
+
+    /* Status Card Style */
+    .status-summary {
+        background: linear-gradient(135deg, #54a0ff 0%, #00d2ff 100%);
+        color: white;
+        border-radius: 25px;
+        padding: 20px;
+        border: none;
+    }
+
+    /* Recommendation Box (FEDIAF) */
+    .pro-banner {
+        background: linear-gradient(135deg, #fff5eb 0%, #ffe0c1 100%);
+        border: 1px solid #ffd3a5;
+        border-radius: 25px;
+        padding: 22px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pro-banner::after {
+        content: '\f0eb';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        right: -10px;
+        bottom: -10px;
+        font-size: 80px;
+        color: rgba(255, 159, 67, 0.1);
+        transform: rotate(-15deg);
+    }
+
+    /* Schedule Card Items */
+    .schedule-item {
+        transition: all 0.3s ease;
+        margin-bottom: 15px;
+        border-left: 5px solid transparent;
+    }
+
+    .schedule-item:hover {
+        transform: scale(1.02);
+    }
+
+    .item-system {
+        border-left-color: var(--primary-color);
+        background: rgba(255, 253, 251, 0.8);
+    }
+
+    .item-manual {
+        border-left-color: #cbd5e0;
+    }
+
+    .time-display {
+        font-size: 26px;
+        font-weight: 800;
+        color: #2d3436;
+        letter-spacing: -0.5px;
+    }
+
+    .portion-tag {
+        background: #fff5eb;
+        color: var(--primary-color);
+        padding: 6px 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 13px;
+    }
+
+    /* Floating Action Button */
+    .add-fab { 
+        position: fixed; 
+        bottom: 110px; 
+        right: 25px; 
+        width: 65px; 
+        height: 65px; 
+        border-radius: 50%; 
+        background: linear-gradient(135deg, #ff9f43 0%, #ff6b6b 100%);
+        color: white; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        font-size: 26px; 
+        box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4); 
+        border: none; 
+        z-index: 1000;
+        transition: all 0.3s ease;
+    }
+
+    .add-fab:hover {
+        transform: rotate(90deg) scale(1.1);
+    }
+
+    .empty-state {
+        padding: 50px 20px;
+        text-align: center;
+        opacity: 0.6;
+    }
+
+    /* Custom Confirm Modal Specifics */
+    .modal-confirm-icon {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 20px;
+        margin: 0 auto 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="schedule-container px-3">
+    <!-- Header -->
+    <div class="d-flex align-items-center mt-4 mb-4">
+        <a href="{{ url_for('dashboard') }}" class="glass-card d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 45px; height: 45px; border-radius: 15px; color: #2d3436; text-decoration: none;">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <h3 class="fw-bold mb-0">Jadwal Makan</h3>
+    </div>
+
+    <!-- Info Mode Saat Ini -->
+    <div class="status-summary shadow-lg mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <small class="opacity-75 d-block mb-1">METODE AKTIF</small>
+                <h5 class="fw-bold mb-0">
+                    {% if has_system %}
+                        Rekomendasi Pintar ({{ '5x' if data['category'] == 'junior' else '3x' }} Makan)
+                    {% else %}
+                        Mode Kustom (Manual)
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                <i class="fas {{ 'fa-magic' if has_system else 'fa-user-edit' }} fa-lg"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promo Mode Rekomendasi (FEDIAF) -->
+    {% if not has_system %}
+    <div class="pro-banner shadow-sm mb-4">
+        <div class="d-flex align-items-start mb-3">
+            <div class="bg-warning bg-opacity-20 p-2 rounded-3 me-3">
+                <i class="fas fa-sparkles text-warning"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-1">Aktifkan Rekomendasi?</h6>
+                <p class="small text-muted mb-0">Mode ini akan menghapus semua jadwal manual dan menerapkan porsi ideal berdasarkan nutrisi {{ data['name'] }}.</p>
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary w-100 rounded-pill fw-bold py-2 shadow-sm border-0" 
+                onclick="triggerConfirm('Gunakan Jadwal Otomatis?', 'Semua jadwal manual Anda akan dihapus dan diganti dengan rekomendasi ahli.', 'system-switch')">
+            Gunakan Jadwal Otomatis
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- List Jadwal -->
+    <div class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3 px-1">
+            <h6 class="fw-bold text-muted small text-uppercase" style="letter-spacing: 1px;">Antrean Jadwal</h6>
+            <span class="badge bg-white text-muted border rounded-pill px-2">{{ schedules|length }} Jadwal</span>
+        </div>
+
+        {% if schedules %}
+            {% for s in schedules %}
+            <div class="glass-card p-3 schedule-item {{ 'item-system' if s.mode == 'system' else 'item-manual' }}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <div class="time-display">{{ s.time.strftime('%H:%M') }}</div>
+                            <span class="badge {% if s.mode == 'system' %}bg-primary{% else %}bg-secondary{% endif %} bg-opacity-10 {% if s.mode == 'system' %}text-primary{% else %}text-secondary{% endif %}" style="font-size: 9px; letter-spacing: 0.5px;">
+                                {{ 'SISTEM' if s.mode == 'system' else 'MANUAL' }}
+                            </span>
+                        </div>
+                        <div class="portion-tag">
+                            <i class="fas fa-cookie-bite me-1"></i> {{ s.grams }}g
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <!-- Edit Button -->
+                        <button class="btn btn-light rounded-circle shadow-sm p-0 d-flex align-items-center justify-content-center" 
+                                style="width: 38px; height: 38px; border: 1px solid #eee;"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#editScheduleModal"
+                                onclick="prepareEditModal('{{ s.id }}', '{{ s.time.strftime('%H:%M') }}', '{{ s.grams }}', '{{ s.mode }}')">
+                            <i class="fas fa-pen text-primary small"></i>
+                        </button>
+                        
+                        <!-- Delete Button (Hanya untuk Manual) -->
+                        {% if s.mode == 'manual' %}
+                        <button type="button" class="btn btn-light rounded-circle shadow-sm p-0 d-flex align-items-center justify-content-center" 
+                           style="width: 38px; height: 38px; border: 1px solid #eee;"
+                           onclick="triggerConfirm('Hapus Jadwal?', 'Tindakan ini tidak dapat dibatalkan.', 'delete', '{{ url_for('delete_schedule', id=s.id) }}')">
+                            <i class="fas fa-trash text-danger small"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="mb-3"><i class="fas fa-calendar-day fa-4x opacity-10"></i></div>
+                <h6 class="fw-bold">Belum Ada Jadwal</h6>
+                <p class="small text-muted">Klik tombol + atau gunakan rekomendasi untuk memulai.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="add-fab" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Floating Bottom Navigation -->
+    <div class="bottom-nav glass-card mx-3 mb-3 border-0">
+        <a href="{{ url_for('dashboard') }}" class="nav-item">
+            <i class="fas fa-home fa-lg"></i>
+        </a>
+        <a href="{{ url_for('schedules') }}" class="nav-item active">
+            <i class="fas fa-calendar-alt fa-lg"></i>
+        </a>
+        <a href="{{ url_for('stats') }}" class="nav-item">
+            <i class="fas fa-chart-bar fa-lg"></i>
+        </a>
+        <a href="{{ url_for('profile') }}" class="nav-item">
+            <i class="fas fa-user-cog fa-lg"></i>
+        </a>
+    </div>
+</div>
+
+<!-- MODAL 1: Tambah Jadwal -->
+<div class="modal fade" id="addScheduleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius: 30px;">
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                        <i class="fas fa-plus text-primary fa-2x"></i>
+                    </div>
+                    <h5 class="fw-bold">Tambah Jadwal Manual</h5>
+                    <p class="text-muted small">Menambah jadwal manual akan menonaktifkan mode otomatis.</p>
+                </div>
+
+                <form id="addScheduleForm" action="{{ url_for('add_schedule') }}" method="POST">
+                    <input type="hidden" name="device_id" value="{{ data['device_id'] }}">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">JAM MAKAN</label>
+                        <input type="time" name="time" class="form-control form-control-lg bg-light border-0 py-3" style="border-radius: 15px;" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted">PORSI (GRAM)</label>
+                        <div class="input-group input-group-lg">
+                            <input type="number" name="grams" class="form-control bg-light border-0 text-center" value="15" min="5" style="border-radius: 15px 0 0 15px;" required>
+                            <span class="input-group-text bg-primary text-white border-0 px-4" style="border-radius: 0 15px 15px 0; font-size: 16px;">g</span>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary py-3 fw-bold rounded-pill shadow-sm" 
+                                onclick="triggerConfirm('Beralih ke Manual?', 'Semua jadwal otomatis saat ini akan dihapus untuk memberi jalan pada pengaturan manual Anda.', 'manual-switch', null, '#addScheduleModal')">
+                            SIMPAN JADWAL
+                        </button>
+                        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">BATAL</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: Edit Jadwal -->
+<div class="modal fade" id="editScheduleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius: 30px;">
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                        <i class="fas fa-edit text-primary fa-2x"></i>
+                    </div>
+                    <h5 class="fw-bold">Edit Jadwal</h5>
+                    <p id="edit-modal-subtitle" class="text-muted small">Sesuaikan pengaturan waktu makan</p>
+                </div>
+
+                <form id="editScheduleForm" action="{{ url_for('edit_schedule') }}" method="POST">
+                    <input type="hidden" name="schedule_id" id="edit_schedule_id">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">JAM MAKAN</label>
+                        <input type="time" name="time" id="edit_time" class="form-control form-control-lg bg-light border-0 py-3" style="border-radius: 15px;" required>
+                    </div>
+                    <div class="mb-4" id="edit-portion-container">
+                        <label class="form-label small fw-bold text-muted">PORSI (GRAM)</label>
+                        <div class="input-group input-group-lg">
+                            <input type="number" name="grams" id="edit_grams" class="form-control bg-light border-0 text-center" min="5" style="border-radius: 15px 0 0 15px;">
+                            <span class="input-group-text bg-primary text-white border-0 px-4" style="border-radius: 0 15px 15px 0; font-size: 16px;">g</span>
+                        </div>
+                        <p id="portion-lock-msg" class="text-info mt-2 mb-0" style="font-size: 11px; display: none;">
+                            <i class="fas fa-lock me-1"></i> Porsi terkunci untuk menjaga akurasi nutrisi mode otomatis.
+                        </p>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary py-3 fw-bold rounded-pill shadow-sm">SIMPAN PERUBAHAN</button>
+                        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">BATAL</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 3: Konfirmasi Custom (Bebas Alert Browser) -->
+<div class="modal fade" id="universalConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 2000;">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 glass-card" style="border-radius: 30px;">
+            <div class="modal-body p-4 text-center">
+                <div id="confirm-icon-bg" class="modal-confirm-icon">
+                    <i id="confirm-icon" class="fas fa-exclamation-triangle fa-lg text-white"></i>
+                </div>
+                <h5 id="confirm-title" class="fw-bold mb-2">Konfirmasi</h5>
+                <p id="confirm-msg" class="text-muted small mb-4">Apakah Anda yakin ingin melakukan tindakan ini?</p>
+                
+                <div class="d-grid gap-2">
+                    <button id="confirm-yes-btn" type="button" class="btn btn-primary py-2 fw-bold rounded-pill shadow-sm">IYA, LANJUTKAN</button>
+                    <button id="confirm-cancel-btn" type="button" class="btn btn-link text-muted text-decoration-none fw-bold small" data-bs-dismiss="modal">BATALKAN</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form tersembunyi untuk apply recommendation -->
+<form id="applyRecForm" action="{{ url_for('apply_recommendation') }}" method="POST" class="d-none">
+    <input type="hidden" name="device_id" value="{{ data['device_id'] }}">
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let activeModals = [];
+
+    /**
+     * Menyiapkan data modal edit sebelum ditampilkan.
+     */
+    function prepareEditModal(id, time, grams, mode) {
+        document.getElementById('edit_schedule_id').value = id;
+        document.getElementById('edit_time').value = time;
+        
+        const gramsInput = document.getElementById('edit_grams');
+        const lockMsg = document.getElementById('portion-lock-msg');
+        const subtitle = document.getElementById('edit-modal-subtitle');
+
+        if (mode === 'system') {
+            gramsInput.value = grams;
+            gramsInput.readOnly = true;
+            gramsInput.classList.add('opacity-50');
+            lockMsg.style.display = 'block';
+            subtitle.innerText = "Hanya waktu makan yang dapat diubah dalam mode otomatis.";
+        } else {
+            gramsInput.value = grams;
+            gramsInput.readOnly = false;
+            gramsInput.classList.remove('opacity-50');
+            lockMsg.style.display = 'none';
+            subtitle.innerText = "Sesuaikan waktu dan porsi makan manual.";
+        }
+    }
+
+    /**
+     * Menangani trigger konfirmasi kustom yang lebih cerdas (Mencegah tumpukan visual).
+     */
+    function triggerConfirm(title, message, type, url = null, sourceModalId = null) {
+        // Inisialisasi modal
+        const confirmModalEl = document.getElementById('universalConfirmModal');
+        const confirmModal = new bootstrap.Modal(confirmModalEl);
+        
+        const titleEl = document.getElementById('confirm-title');
+        const msgEl = document.getElementById('confirm-msg');
+        const iconEl = document.getElementById('confirm-icon');
+        const iconBg = document.getElementById('confirm-icon-bg');
+        const yesBtn = document.getElementById('confirm-yes-btn');
+        const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+        // Jika dipicu dari modal lain, sembunyikan modal sumber agar tidak "ketumpuk"
+        let sourceModal = null;
+        if (sourceModalId) {
+            sourceModal = bootstrap.Modal.getInstance(document.querySelector(sourceModalId));
+            if (sourceModal) sourceModal.hide();
+            
+            // Logika Kembali: Jika batal, munculkan kembali modal sebelumnya
+            cancelBtn.onclick = () => {
+                sourceModal.show();
+            };
+        } else {
+            cancelBtn.onclick = null; // Batal biasa
+        }
+
+        titleEl.innerText = title;
+        msgEl.innerText = message;
+
+        // Reset styling default
+        iconBg.style.background = '#ff9f43';
+        yesBtn.className = 'btn btn-primary py-2 fw-bold rounded-pill shadow-sm';
+        yesBtn.innerText = 'IYA, LANJUTKAN';
+
+        if (type === 'delete') {
+            iconBg.style.background = '#ff4757';
+            iconEl.className = 'fas fa-trash-alt fa-lg text-white';
+            yesBtn.className = 'btn btn-danger py-2 fw-bold rounded-pill shadow-sm';
+            yesBtn.onclick = () => { window.location.href = url; };
+        } else if (type === 'manual-switch') {
+            iconBg.style.background = '#54a0ff';
+            iconEl.className = 'fas fa-exchange-alt fa-lg text-white';
+            yesBtn.onclick = () => { document.getElementById('addScheduleForm').submit(); };
+        } else if (type === 'system-switch') {
+            iconBg.style.background = '#2ecc71';
+            iconEl.className = 'fas fa-magic fa-lg text-white';
+            yesBtn.innerText = 'AKTIFKAN SEKARANG';
+            yesBtn.onclick = () => { document.getElementById('applyRecForm').submit(); };
+        }
+
+        confirmModal.show();
+    }
+</script>
+{% endblock %}

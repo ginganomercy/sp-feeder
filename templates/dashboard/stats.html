@@ -1,0 +1,309 @@
+{% extends 'layout.html' %}
+
+{% block title %}Statistik Nutrisi - Smart Pet Feeder{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Gradient & Background Styles */
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.3);
+    }
+
+    body {
+        background: linear-gradient(135deg, #fdfcf0 0%, #fff5eb 100%);
+        min-height: 100vh;
+    }
+
+    /* Glassmorphism Cards */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 28px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    }
+
+    .stats-container {
+        padding-bottom: 120px;
+    }
+
+    /* Nutrient Summary Hero */
+    .target-hero {
+        background: linear-gradient(135deg, #54a0ff 0%, #00d2ff 100%);
+        color: white;
+        border-radius: 30px;
+        padding: 25px;
+        position: relative;
+        overflow: hidden;
+        border: none;
+    }
+
+    .target-hero::after {
+        content: '\f4fb';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        right: -10px;
+        bottom: -10px;
+        font-size: 80px;
+        color: rgba(255, 255, 255, 0.15);
+        transform: rotate(-15deg);
+    }
+
+    /* Chart Styling */
+    .chart-box {
+        height: 180px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding: 10px 5px;
+        gap: 8px;
+    }
+
+    .bar-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+        justify-content: flex-end;
+    }
+
+    .bar-fill {
+        width: 100%;
+        background: linear-gradient(to top, var(--primary-color), #ffcd94);
+        border-radius: 10px 10px 4px 4px;
+        transition: height 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        min-height: 5px;
+    }
+
+    .bar-fill:hover {
+        filter: brightness(1.1);
+        cursor: pointer;
+    }
+
+    /* BCS Guide Styles - Updated for clarity */
+    .bcs-card-item {
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 18px;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .bcs-indicator {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: white;
+        margin-right: 15px;
+        flex-shrink: 0;
+        line-height: 1;
+    }
+
+    .bcs-indicator small { font-size: 8px; opacity: 0.8; margin-top: 2px; }
+
+    /* Weight History List */
+    .history-row {
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+
+    .history-row:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stats-container px-3">
+    <!-- Header -->
+    <div class="d-flex align-items-center mt-4 mb-4">
+        <a href="{{ url_for('dashboard') }}" class="glass-card d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 45px; height: 45px; border-radius: 15px; color: #2d3436; text-decoration: none;">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <h3 class="fw-bold mb-0">Statistik & Kesehatan</h3>
+    </div>
+
+    <!-- 1. Ringkasan Nutrisi FEDIAF -->
+    <div class="target-hero shadow-lg mb-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <div class="badge bg-white bg-opacity-25 rounded-pill px-3 py-1 mb-2 small">
+                    <i class="fas fa-info-circle me-1"></i> STANDAR FEDIAF 2024
+                </div>
+                <h5 class="fw-bold mb-0">Target Nutrisi Harian</h5>
+            </div>
+            <div class="text-end">
+                <span class="badge rounded-pill bg-white text-primary py-2 px-3 fw-bold shadow-sm">
+                    {{ data['weight_kg'] }} kg
+                </span>
+            </div>
+        </div>
+        <div class="d-flex align-items-baseline">
+            <h1 class="fw-bold mb-0" style="font-size: 45px;">{{ data['daily_target_grams']|round|int }}</h1>
+            <span class="ms-2 fw-medium opacity-75">gram / hari</span>
+        </div>
+    </div>
+
+    <!-- 2. Grafik Konsumsi 7 Hari -->
+    <div class="glass-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h6 class="fw-bold mb-0 text-muted small text-uppercase" style="letter-spacing: 1px;">KONSUMSI 7 HARI TERAKHIR</h6>
+            <span class="badge bg-light text-primary rounded-pill px-2">Aktual</span>
+        </div>
+        
+        <div class="chart-box">
+            {% if weekly_data %}
+                {% for day in weekly_data %}
+                <div class="bar-wrapper" title="{{ day.total }}g">
+                    {% set percent = (day.total / data['daily_target_grams'] * 100) if data['daily_target_grams'] > 0 else 0 %}
+                    <div class="bar-fill" style="height: {{ percent if percent <= 100 else 100 }}%;"></div>
+                    <small class="text-muted mt-2" style="font-size: 8px; font-weight: 700;">{{ day.label }}</small>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="w-100 text-center py-5">
+                    <p class="text-muted small">Belum ada data asupan</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="mt-4 pt-3 border-top border-light d-flex justify-content-between align-items-center">
+            <span class="small text-muted">Total Konsumsi Hari Ini:</span>
+            <span class="fw-bold text-dark">{{ today_total|default(0) }}g</span>
+        </div>
+    </div>
+
+    <!-- 3. Health Tracker: Berat Badan (Kilogram) -->
+    <div class="glass-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold mb-0 text-muted small text-uppercase" style="letter-spacing: 1px;">MONITOR BERAT (KG)</h6>
+            <button class="btn btn-sm btn-primary rounded-pill px-3 fw-bold" style="font-size: 11px;" data-bs-toggle="modal" data-bs-target="#weightModal">
+                UPDATE
+            </button>
+        </div>
+        
+        <div class="history-list">
+            <div class="d-flex justify-content-between align-items-center history-row">
+                <div>
+                    <span class="fw-bold d-block">Berat Terkini</span>
+                    <small class="text-muted">Anabul: {{ data['name'] }}</small>
+                </div>
+                <div class="text-end">
+                    <span class="fw-bold" style="font-size: 22px; color: var(--primary-color);">{{ data['weight_kg'] }} <small style="font-size: 12px;">kg</small></span>
+                </div>
+            </div>
+            <p class="text-muted mt-2 mb-0" style="font-size: 10px; font-style: italic;">
+                *Pastikan update berat badan secara rutin untuk akurasi porsi makan otomatis.
+            </p>
+        </div>
+    </div>
+
+    <!-- 4. Penjelasan BCS (Skala Kondisi Tubuh, Bukan Berat Badan) -->
+    <div class="glass-card p-4">
+        <div class="text-center mb-4">
+            <h6 class="fw-bold mb-1 text-muted small text-uppercase" style="letter-spacing: 1px;">Body Condition Score (BCS)</h6>
+            <p class="text-muted" style="font-size: 11px;">Skala visual lemak tubuh (Internasional)</p>
+        </div>
+
+        <div class="bcs-list">
+            <div class="bcs-card-item">
+                <div class="bcs-indicator" style="background: #fab1a0;">
+                    1-3
+                    <small>SKOR</small>
+                </div>
+                <div>
+                    <span class="fw-bold d-block small">Kurus / Underweight</span>
+                    <small class="text-muted" style="font-size: 10px;">Tulang rusuk dan panggul sangat menonjol.</small>
+                </div>
+            </div>
+            <div class="bcs-card-item" style="background: rgba(46, 204, 113, 0.05); border: 1px solid rgba(46, 204, 113, 0.2);">
+                <div class="bcs-indicator" style="background: #2ecc71;">
+                    4-5
+                    <small>SKOR</small>
+                </div>
+                <div>
+                    <span class="fw-bold d-block small text-success">Ideal (Target Sehat)</span>
+                    <small class="text-muted" style="font-size: 10px;">Tubuh proporsional, pinggang terlihat jelas.</small>
+                </div>
+            </div>
+            <div class="bcs-card-item">
+                <div class="bcs-indicator" style="background: #ff7675;">
+                    6-9
+                    <small>SKOR</small>
+                </div>
+                <div>
+                    <span class="fw-bold d-block small text-danger">Gemuk / Overweight</span>
+                    <small class="text-muted" style="font-size: 10px;">Endapan lemak tebal, pinggang tidak terlihat.</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-light rounded-3 p-2 mt-3 text-center">
+            <small class="text-muted" style="font-size: 9px; line-height: 1.2; display: block;">
+                <i class="fas fa-info-circle me-1"></i> BCS adalah skor visual kondisi fisik, tidak bergantung pada jumlah Kilogram berat badan hewan.
+            </small>
+        </div>
+    </div>
+
+    <!-- Floating Bottom Navigation -->
+    <div class="bottom-nav glass-card mx-3 mb-3 border-0">
+        <a href="{{ url_for('dashboard') }}" class="nav-item">
+            <i class="fas fa-home fa-lg"></i>
+        </a>
+        <a href="{{ url_for('schedules') }}" class="nav-item">
+            <i class="fas fa-calendar-alt fa-lg"></i>
+        </a>
+        <a href="{{ url_for('stats') }}" class="nav-item active">
+            <i class="fas fa-chart-bar fa-lg"></i>
+        </a>
+        <a href="{{ url_for('profile') }}" class="nav-item">
+            <i class="fas fa-user-cog fa-lg"></i>
+        </a>
+    </div>
+</div>
+
+<!-- Modal Update Berat -->
+<div class="modal fade" id="weightModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius: 30px;">
+            <div class="modal-body p-4 text-center">
+                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                    <i class="fas fa-weight-hanging text-primary fa-2x"></i>
+                </div>
+                <h5 class="fw-bold">Update Berat Badan</h5>
+                <p class="text-muted small mb-4">Target porsi pakan harian akan disesuaikan otomatis.</p>
+                <form action="{{ url_for('update_pet') }}" method="POST">
+                    <input type="hidden" name="device_id" value="{{ data['device_id'] }}">
+                    <input type="hidden" name="nama_kucing" value="{{ data['name'] }}">
+                    <input type="hidden" name="jenis" value="{{ data['species'] }}">
+                    <input type="hidden" name="kategori" value="{{ data['category'] }}">
+                    <input type="hidden" name="kcal" value="{{ data['kcal_per_kg'] }}">
+                    
+                    <div class="mb-4">
+                        <div class="input-group input-group-lg">
+                            <input type="number" step="0.1" name="berat" class="form-control bg-light border-0 text-center" placeholder="{{ data['weight_kg'] }}" style="border-radius: 15px 0 0 15px;" required>
+                            <span class="input-group-text bg-primary text-white border-0 px-4" style="border-radius: 0 15px 15px 0; font-size: 16px;">kg</span>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary py-3 fw-bold rounded-pill shadow-sm">SIMPAN & UPDATE PORSI</button>
+                        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">BATAL</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

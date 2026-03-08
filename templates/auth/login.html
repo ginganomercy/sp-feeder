@@ -1,0 +1,173 @@
+{% extends 'layout.html' %}
+
+{% block title %}Masuk - Smart Pet Feeder{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.3);
+    }
+
+    body {
+        background: linear-gradient(135deg, #fdfcf0 0%, #fff5eb 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .auth-glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid var(--glass-border);
+        border-radius: 35px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+        padding: 20px 30px;
+        width: 100%;
+        max-width: 420px;
+        animation: slideUp 0.8s ease-out;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .brand-section {
+        margin-bottom: 5px;
+    }
+
+    /* Ukuran logo ditingkatkan agar heroik, sama dengan halaman register */
+    .brand-logo-display {
+        width: 170px; 
+        height: 170px;
+        margin: 0 auto 1px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+    }
+
+    .brand-logo-display:hover {
+        transform: scale(1.05);
+    }
+
+    .brand-logo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        filter: drop-shadow(0 8px 15px rgba(255, 159, 67, 0.2));
+    }
+
+    .app-name {
+        color: #2d3436;
+        font-weight: 800;
+        font-size: 28px;
+        letter-spacing: -1px;
+        margin-bottom: 10px;
+    }
+
+    .form-label-small {
+        font-size: 11px;
+        font-weight: 700;
+        color: #b2bec3;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-left: 15px;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .custom-input {
+        background: rgba(255, 255, 255, 0.5);
+        border: 2px solid transparent;
+        border-radius: 18px;
+        padding: 14px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        color: #2d3436;
+    }
+
+    .custom-input:focus {
+        background: #fff;
+        border-color: var(--primary-color);
+        box-shadow: 0 5px 15px rgba(255, 159, 67, 0.1);
+        outline: none;
+    }
+
+    /* Tombol oranye sesuai brand */
+    .btn-login {
+        background: linear-gradient(135deg, #ff9f43 0%, #ff6b6b 100%);
+        border: none;
+        border-radius: 20px;
+        padding: 16px;
+        color: white;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+        transition: all 0.3s ease;
+        margin-top: 10px;
+    }
+
+    .btn-login:hover {
+        transform: translateY(-3px);
+        filter: brightness(1.05);
+        box-shadow: 0 12px 25px rgba(255, 107, 107, 0.4);
+    }
+
+    .register-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .register-link:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-glass-card">
+    <!-- Brand Identity Section -->
+    <div class="text-center brand-section">
+        <div class="brand-logo-display">
+            <!-- Menampilkan Logo Oranye Secara Langsung -->
+            <img src="{{ url_for('static', filename='img/logo.png') }}" 
+                 alt="MeowFeed Logo" 
+                 class="brand-logo-img" 
+                 onerror="this.parentElement.innerHTML='<i class=\'fas fa-paw fa-4x text-primary\'></i>'">
+        </div>
+        <h2 class="app-name">Masuk Akun</h2>
+        <p class="text-muted small px-4">Akses dashboard nutrisi pintar untuk anabul kesayangan Anda.</p>
+    </div>
+
+    <!-- Login Form -->
+    <form action="{{ url_for('login') }}" method="POST">
+        <div class="mb-3">
+            <label class="form-label-small">Username</label>
+            <input type="text" name="username" class="form-control custom-input w-100" placeholder="Masukkan username" required>
+        </div>
+        
+        <div class="mb-4">
+            <label class="form-label-small">Password</label>
+            <input type="password" name="password" class="form-control custom-input w-100" placeholder="Masukkan password" required>
+        </div>
+
+        <div class="d-grid">
+            <button type="submit" class="btn btn-login shadow">
+                MASUK KE APLIKASI <i class="fas fa-sign-in-alt ms-2"></i>
+            </button>
+        </div>
+    </form>
+
+    <!-- Footer Action -->
+    <div class="text-center mt-2 pt-3 border-top border-light border-opacity-50">
+        <p class="small text-muted mb-0">
+            Belum punya akun? <a href="{{ url_for('register') }}" class="register-link">Daftar Sekarang</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

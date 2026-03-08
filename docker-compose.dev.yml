@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Flask Application (Development Mode)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smart-pet-feeder-dev
+    restart: unless-stopped
+    ports:
+      - "5011:5011"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=True
+      - MYSQL_HOST=db
+      - MQTT_BROKER=mosquitto
+      - SERVER_PORT=5011
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - mosquitto
+    networks:
+      - petfeeder-network
+    volumes:
+      - .:/app
+      - /app/venv
+      - /app/__pycache__
+    command: python app.py
+    stdin_open: true
+    tty: true
+
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: smart-pet-feeder-db-dev
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: smart_pet_feeder
+      MYSQL_USER: petfeeder
+      MYSQL_PASSWORD: petfeeder123
+    volumes:
+      - mysql-dev-data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - petfeeder-network
+
+  # Mosquitto MQTT Broker
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: smart-pet-feeder-mqtt-dev
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./docker/mosquitto/config:/mosquitto/config:ro
+      - mosquitto-dev-data:/mosquitto/data
+      - mosquitto-dev-logs:/mosquitto/log
+    networks:
+      - petfeeder-network
+
+networks:
+  petfeeder-network:
+    driver: bridge
+
+volumes:
+  mysql-dev-data:
+    driver: local
+  mosquitto-dev-data:
+    driver: local
+  mosquitto-dev-logs:
+    driver: local

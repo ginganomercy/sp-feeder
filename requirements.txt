@@ -1,0 +1,26 @@
+# Web Framework
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# Security & Authentication
+Flask-Bcrypt==1.0.1
+
+# Database
+mysql-connector-python==8.2.0
+
+# IoT & MQTT
+paho-mqtt==1.6.1
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Development Dependencies
+black==24.1.1
+flake8==7.0.0
+isort==5.13.2
+
+# Production Server (Optional untuk development)
+gunicorn==21.2.0
+
+# Development Tools (Optional)
+flask-cors==4.0.0

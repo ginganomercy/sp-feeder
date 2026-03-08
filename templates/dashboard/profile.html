@@ -1,0 +1,429 @@
+{% extends 'layout.html' %}
+
+{% block title %}Profil & Alat - Smart Pet Feeder{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Gradient & Background Styles */
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.3);
+    }
+
+    body {
+        background: linear-gradient(135deg, #fdfcf0 0%, #fff5eb 100%);
+        min-height: 100vh;
+    }
+
+    /* Glassmorphism Cards */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 28px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    }
+
+    .profile-container {
+        padding-bottom: 120px;
+    }
+
+    /* User Header Section */
+    .user-profile-hero {
+        text-align: center;
+        padding: 40px 20px;
+        position: relative;
+    }
+
+    .avatar-wrapper {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, #ff9f43 0%, #ff6b6b 100%);
+        color: white;
+        border-radius: 35% 65% 70% 30% / 30% 40% 60% 70%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 45px;
+        margin: 0 auto 20px;
+        box-shadow: 0 10px 20px rgba(255, 159, 67, 0.3);
+        animation: morph 8s ease-in-out infinite;
+    }
+
+    @keyframes morph {
+        0% { border-radius: 35% 65% 70% 30% / 30% 40% 60% 70%; }
+        50% { border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%; }
+        100% { border-radius: 35% 65% 70% 30% / 30% 40% 60% 70%; }
+    }
+
+    /* Menu Styling */
+    .settings-group {
+        margin-bottom: 30px;
+    }
+
+    .menu-item {
+        display: flex;
+        align-items: center;
+        padding: 18px 20px;
+        text-decoration: none;
+        color: #2d3436;
+        transition: all 0.3s ease;
+        border-bottom: 1px solid rgba(0,0,0,0.03);
+        cursor: pointer;
+    }
+
+    .menu-item:last-child {
+        border-bottom: none;
+    }
+
+    .menu-item:hover {
+        background: rgba(255, 255, 255, 0.4);
+        transform: translateX(5px);
+    }
+
+    .menu-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 18px;
+        font-size: 18px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    .bg-soft-primary { background: #fff5eb; color: var(--primary-color); }
+    .bg-soft-blue { background: #ebf5ff; color: #54a0ff; }
+    .bg-soft-red { background: #fff1f0; color: #ff4d4f; }
+
+    .menu-text-title {
+        font-weight: 700;
+        font-size: 15px;
+        display: block;
+    }
+
+    .menu-text-subtitle {
+        font-size: 11px;
+        color: #b2bec3;
+    }
+
+    /* Form Styles in Modal */
+    .form-label-custom {
+        font-size: 11px;
+        font-weight: 700;
+        color: #b2bec3;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .form-control-custom {
+        border-radius: 15px;
+        background: #f8f9fa;
+        border: 2px solid transparent;
+        padding: 12px 15px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .form-control-custom:focus {
+        background: #fff;
+        border-color: var(--primary-color);
+        box-shadow: none;
+    }
+
+    /* Custom Confirm Modal Specifics */
+    .modal-confirm-icon {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 20px;
+        margin: 0 auto 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container px-3">
+    <!-- Header Navigation -->
+    <div class="d-flex align-items-center mt-4 mb-2">
+        <a href="{{ url_for('dashboard') }}" class="glass-card d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 45px; height: 45px; border-radius: 15px; color: #2d3436; text-decoration: none;">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <h3 class="fw-bold mb-0">Pengaturan</h3>
+    </div>
+
+    <!-- User Info Hero -->
+    <div class="user-profile-hero">
+        <div class="avatar-wrapper">
+            <i class="fas fa-user-circle"></i>
+        </div>
+        <h3 class="fw-bold mb-1 text-dark">{{ session['username'] }}</h3>
+        <p class="text-muted small">
+            {% if is_owner %}
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">Pemilik Alat</span>
+            {% else %}
+                <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">Anggota Keluarga</span>
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Group 1: Pet & Device -->
+    <div class="settings-group">
+        <h6 class="fw-bold text-muted small px-2 mb-3 text-uppercase" style="letter-spacing: 1px;">Profil & Perangkat</h6>
+        <div class="glass-card overflow-hidden">
+            
+            <!-- Item Profil Nutrisi -->
+            <div class="menu-item" {% if is_owner %} data-bs-toggle="modal" data-bs-target="#editPetModal" {% endif %}>
+                <div class="menu-icon bg-soft-primary">
+                    <i class="fas fa-paw"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <span class="menu-text-title">Profil Nutrisi</span>
+                    <span class="menu-text-subtitle">{{ data['name'] }} ({{ data['kcal_per_kg'] }} kkal, {{ data['species']|capitalize }})</span>
+                </div>
+                <div class="text-end me-2">
+                    {% if is_owner %}
+                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill mb-1" style="font-size: 8px;">AUTO-PLAN ACTIVE</span>
+                        <br><i class="fas fa-edit text-muted small"></i>
+                    {% else %}
+                        <i class="fas fa-lock text-muted opacity-25 small"></i>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Info ID Alat -->
+            <div class="menu-item">
+                <div class="menu-icon bg-soft-blue">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <span class="menu-text-title">ID Perangkat</span>
+                    <span class="menu-text-subtitle">{{ data['device_sn'] }}</span>
+                </div>
+                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2" style="font-size: 9px;">CONNECTED</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group 2: Account Security -->
+    <div class="settings-group">
+        <h6 class="fw-bold text-muted small px-2 mb-3 text-uppercase" style="letter-spacing: 1px;">Keamanan</h6>
+        <div class="glass-card overflow-hidden">
+            <!-- Modal Ganti Password -->
+            <div class="menu-item" data-bs-toggle="modal" data-bs-target="#passwordModal">
+                <div class="menu-icon bg-soft-blue">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <span class="menu-text-title">Ganti Password</span>
+                    <span class="menu-text-subtitle">Perbarui akses akun Anda</span>
+                </div>
+                <i class="fas fa-chevron-right text-muted small"></i>
+            </div>
+
+            <!-- Logout -->
+            <a href="{{ url_for('logout') }}" class="menu-item">
+                <div class="menu-icon bg-soft-red">
+                    <i class="fas fa-power-off"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <span class="menu-text-title text-danger">Keluar Akun</span>
+                    <span class="menu-text-subtitle">Selesaikan sesi aplikasi</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Group 3: Maintenance -->
+    <div class="settings-group">
+        <h6 class="fw-bold text-danger small px-2 mb-3 text-uppercase" style="letter-spacing: 1px;">Zona Bahaya</h6>
+        <div class="glass-card overflow-hidden" style="border: 1px solid rgba(255, 77, 79, 0.2);">
+            <!-- Pesan diperjelas: Fokus pada pemutusan hubungan alat, bukan akun -->
+            <a href="javascript:void(0)" class="menu-item" 
+               onclick="triggerResetConfirm('{{ 'Lepas Perangkat?' if is_owner else 'Keluar dari Alat?' }}', '{% if is_owner %}Ini akan menghapus riwayat pakan, jadwal, dan profil hewan dari database. Alat akan terputus dari semua pengguna, namun akun login Anda tetap aktif.{% else %}Hapus akses pantauan Anda dari alat ini? Anda tetap bisa masuk ke aplikasi dan memindai alat ini kembali di masa depan.{% endif %}', '{{ url_for('reset_device') }}')">
+                <div class="menu-icon bg-soft-red">
+                    <i class="fas {% if is_owner %}fa-trash-alt{% else %}fa-unlink{% endif %} text-danger"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <span class="menu-text-title text-danger">{% if is_owner %}Reset Hubungan Alat{% else %}Keluar dari Alat{% endif %}</span>
+                    <span class="menu-text-subtitle">{% if is_owner %}Hapus semua data terkait alat ini{% else %}Hapus akses pantauan dari akun ini{% endif %}</span>
+                </div>
+                <i class="fas fa-exclamation-triangle text-danger opacity-50 small"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Floating Bottom Navigation -->
+    <div class="bottom-nav glass-card mx-3 mb-3 border-0">
+        <a href="{{ url_for('dashboard') }}" class="nav-item">
+            <i class="fas fa-home fa-lg"></i>
+        </a>
+        <a href="{{ url_for('schedules') }}" class="nav-item">
+            <i class="fas fa-calendar-alt fa-lg"></i>
+        </a>
+        <a href="{{ url_for('stats') }}" class="nav-item">
+            <i class="fas fa-chart-bar fa-lg"></i>
+        </a>
+        <a href="{{ url_for('profile') }}" class="nav-item active">
+            <i class="fas fa-user-cog fa-lg"></i>
+        </a>
+    </div>
+</div>
+
+{% if is_owner %}
+<!-- MODAL EDIT PROFIL NUTRISI -->
+<div class="modal fade" id="editPetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius: 30px;">
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                        <i class="fas fa-paw text-primary fa-2x"></i>
+                    </div>
+                    <h5 class="fw-bold">Edit Info Nutrisi</h5>
+                    <p class="text-muted small">Update data akan otomatis merancang ulang jadwal pakan cerdas yang ideal bagi anabul.</p>
+                </div>
+
+                <form action="{{ url_for('update_pet') }}" method="POST">
+                    <input type="hidden" name="device_id" value="{{ data['device_id'] }}">
+                    
+                    <div class="mb-3">
+                        <label class="form-label-custom">NAMA ANABUL</label>
+                        <input type="text" name="nama_kucing" class="form-control form-control-custom" value="{{ data['name'] }}" required>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label-custom">BERAT (KG)</label>
+                            <input type="number" step="0.1" name="berat" class="form-control form-control-custom" value="{{ data['weight_kg'] }}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label-custom">JENIS</label>
+                            <select name="jenis" class="form-select form-control-custom">
+                                <option value="cat" {% if data['species'] == 'cat' %}selected{% endif %}>Kucing</option>
+                                <option value="dog" {% if data['species'] == 'dog' %}selected{% endif %}>Anjing</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label-custom">KALORI PAKAN (KKAL/KG)</label>
+                        <div class="input-group">
+                            <input type="number" name="kcal" class="form-control form-control-custom" value="{{ data['kcal_per_kg'] }}" required>
+                            <span class="input-group-text bg-light border-0 fw-bold" style="border-radius: 0 15px 15px 0; font-size: 11px;">kkal</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label-custom">TINGKAT AKTIVITAS & USIA</label>
+                        <select name="kategori" class="form-select form-control-custom">
+                            <option value="indoor" {% if data['category'] == 'indoor' %}selected{% endif %}>Indoor (Kurang Aktif - 3x Makan)</option>
+                            <option value="active" {% if data['category'] == 'active' %}selected{% endif %}>Normal / Aktif (3x Makan)</option>
+                            <option value="junior" {% if data['category'] == 'junior' %}selected{% endif %}>Junior (Masa Pertumbuhan - 5x Makan)</option>
+                        </select>
+                        <div class="mt-2 ps-2">
+                            <small class="text-info fw-bold" style="font-size: 10px;">
+                                <i class="fas fa-info-circle"></i> Kategori Junior otomatis menggunakan 5 jadwal makan per hari.
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary py-3 fw-bold rounded-pill shadow-sm">SIMPAN PERUBAHAN</button>
+                        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">BATAL</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- MODAL GANTI PASSWORD -->
+<div class="modal fade" id="passwordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius: 30px;">
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                        <i class="fas fa-key text-info fa-2x"></i>
+                    </div>
+                    <h5 class="fw-bold">Ganti Password</h5>
+                    <p class="text-muted small">Amankan kembali akses akun Anda</p>
+                </div>
+
+                <form action="{{ url_for('reset_password') }}" method="POST">
+                    <div class="mb-4">
+                        <label class="form-label-custom">PASSWORD BARU</label>
+                        <input type="password" name="new_password" class="form-control form-control-custom" placeholder="Minimal 6 karakter" required>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-info text-white py-3 fw-bold rounded-pill shadow-sm">UPDATE PASSWORD</button>
+                        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">BATAL</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL KONFIRMASI CUSTOM (Hapus Browser Alert) -->
+<div class="modal fade" id="universalConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 2000;">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 glass-card" style="border-radius: 30px;">
+            <div class="modal-body p-4 text-center">
+                <div id="confirm-icon-bg" class="modal-confirm-icon" style="background: #ff4757;">
+                    <i id="confirm-icon" class="fas fa-exclamation-triangle fa-lg text-white"></i>
+                </div>
+                <h5 id="confirm-title" class="fw-bold mb-2">Konfirmasi</h5>
+                <p id="confirm-msg" class="text-muted small mb-4">Apakah Anda yakin?</p>
+                
+                <div class="d-grid gap-2">
+                    <button id="confirm-yes-btn" type="button" class="btn btn-danger py-2 fw-bold rounded-pill shadow-sm">IYA, LANJUTKAN</button>
+                    <button type="button" class="btn btn-link text-muted text-decoration-none fw-bold small" data-bs-dismiss="modal">BATALKAN</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    /**
+     * Trigger modal konfirmasi kustom untuk zona bahaya.
+     */
+    function triggerResetConfirm(title, message, url) {
+        const confirmModalEl = document.getElementById('universalConfirmModal');
+        const confirmModal = new bootstrap.Modal(confirmModalEl);
+        
+        document.getElementById('confirm-title').innerText = title;
+        document.getElementById('confirm-msg').innerText = message;
+        
+        const iconEl = document.getElementById('confirm-icon');
+        const yesBtn = document.getElementById('confirm-yes-btn');
+        const isOwner = "{{ is_owner }}" === "True";
+
+        // Adaptasi Ikon berdasarkan level user
+        if (isOwner) {
+            iconEl.className = 'fas fa-trash-alt fa-lg text-white';
+        } else {
+            iconEl.className = 'fas fa-unlink fa-lg text-white';
+        }
+
+        // Set action
+        yesBtn.onclick = () => {
+            window.location.href = url;
+        };
+
+        confirmModal.show();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,109 @@
+:root {
+    --primary-color: #ff9f43;    /* Orange untuk Pet/Food */
+    --secondary-color: #54a0ff;  /* Blue untuk Water/Hydration */
+    --bg-color: #fdfcf0;
+    --text-color: #2d3436;
+    --card-bg: #ffffff;
+    --danger-color: #ff4d4f;
+    --success-color: #2ecc71;
+}
+
+body {
+    font-family: 'Quicksand', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+}
+
+/* Auth & Onboarding Cards */
+.auth-card {
+    background: var(--card-bg);
+    border-radius: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    padding: 30px;
+    border: 2px solid #f1f1f1;
+}
+
+/* Dashboard Pantry Widget */
+.pantry-widget {
+    background: white;
+    border-radius: 25px;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.pantry-bar-vertical {
+    width: 60px;
+    height: 150px;
+    background: #eee;
+    margin: 0 auto 15px;
+    border-radius: 15px;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+}
+
+.pantry-fill {
+    width: 100%;
+    background: linear-gradient(to top, var(--primary-color), #ffbe76);
+    border-radius: 15px;
+    transition: height 1s ease-in-out;
+}
+
+/* Hydration Reminder */
+.water-reminder {
+    background: #ebf5ff;
+    border-radius: 20px;
+    padding: 15px;
+    border-left: 5px solid var(--secondary-color);
+}
+
+.water-icon-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--secondary-color);
+    color: white;
+    border: none;
+    transition: 0.3s;
+}
+
+.water-icon-btn.active {
+    animation: pulse-blue 2s infinite;
+}
+
+@keyframes pulse-blue {
+    0% { box-shadow: 0 0 0 0 rgba(84, 160, 255, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(84, 160, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(84, 160, 255, 0); }
+}
+
+/* Navigasi Bawah */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    display: flex;
+    justify-content: space-around;
+    padding: 15px 0;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+    z-index: 1000;
+    border-top-left-radius: 25px;
+    border-top-right-radius: 25px;
+}
+
+.nav-item {
+    text-align: center;
+    color: #ccc;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.nav-item.active {
+    color: var(--primary-color);
+}
