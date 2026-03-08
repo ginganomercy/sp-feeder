@@ -5,7 +5,7 @@ services:
     container_name: smart-pet-feeder-web
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "5011:5011"
     env_file:
       - .env.docker
     depends_on:
@@ -18,7 +18,7 @@ services:
     volumes:
       - ./logs:/app/logs
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:5011/" ]
       interval: 30s
       timeout: 10s
       retries: 3

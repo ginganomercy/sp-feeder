@@ -52,11 +52,11 @@ COPY --chown=appuser:appuser . .
 USER appuser
 
 # Expose port
-EXPOSE 8000
+EXPOSE 5011
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/', timeout=5)" || exit 1
+    CMD python -c "import requests; requests.get('http://localhost:5011/', timeout=5)" || exit 1
 
 # Run with Gunicorn
 CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]
