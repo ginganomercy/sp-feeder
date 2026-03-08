@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Flask Application — image pulled from GHCR by CI/CD
   web:
@@ -8,11 +6,6 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
-    environment:
-      - FLASK_ENV=production
-      - FLASK_DEBUG=False
-      - MYSQL_HOST=db
-      - MQTT_BROKER=mosquitto
     env_file:
       - .env.docker
     depends_on:
@@ -36,18 +29,20 @@ services:
     image: mysql:8.0
     container_name: smart-pet-feeder-db
     restart: unless-stopped
+    # env_file passes MYSQL_ROOT_PASSWORD, MYSQL_USER, MYSQL_PASSWORD
+    env_file:
+      - .env.docker
+    # MySQL image needs MYSQL_DATABASE (bukan MYSQL_DB) untuk inisialisasi DB
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DB}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: smart_pet_feeder
     volumes:
       - mysql-data:/var/lib/mysql
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - petfeeder-network
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}" ]
+      # Tanpa password di command — lebih aman, pakai --silent
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "--silent" ]
       interval: 10s
       timeout: 5s
       retries: 5
