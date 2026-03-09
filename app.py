@@ -83,7 +83,7 @@ def get_user_device_data(user_id):
         cursor = conn.cursor(dictionary=True)
         cursor.execute(
             """
-            SELECT d.id as device_id, d.device_sn, d.current_stock, d.max_capacity,
+            SELECT d.id as device_id, d.device_sn, d.owner_id, d.current_stock, d.max_capacity,
                    p.name, p.species, p.category, p.weight_kg, p.kcal_per_kg, p.daily_target_grams
             FROM devices d LEFT JOIN pets p ON d.id = p.device_id
             WHERE d.owner_id = %s LIMIT 1
@@ -183,7 +183,7 @@ def dashboard():
     cursor = conn.cursor(dictionary=True)
     cursor.execute(
         "SELECT * FROM feeding_logs WHERE device_id = %s ORDER BY timestamp DESC LIMIT 10",
-        (data["device_sn"],),
+        (data["device_id"],),
     )
     logs = cursor.fetchall()
 
