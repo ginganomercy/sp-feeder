@@ -9,9 +9,10 @@ services:
     env_file:
       - .env.docker
     environment:
-      # Override .env.docker: internal Docker pakai plain 1883, bukan TLS 8883
-      - MQTT_BROKER=mosquitto
-      - MQTT_PORT=1883
+      # Pakai HiveMQ public broker (sama dengan firmware ESP32)
+      # Tidak perlu self-hosted mosquitto
+      - MQTT_BROKER=broker.hivemq.com
+      - MQTT_PORT=8883
     depends_on:
       db:
         condition: service_healthy
@@ -49,28 +50,12 @@ services:
       retries: 10
       start_period: 60s
 
-  # Mosquitto MQTT Broker (Private)
-  mosquitto:
-    image: eclipse-mosquitto:2.0
-    container_name: smart-pet-feeder-mqtt
-    restart: unless-stopped
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    volumes:
-      - ./docker/mosquitto/config:/mosquitto/config:ro
-      - mosquitto-data:/mosquitto/data
-    networks:
-      - petfeeder-network
-
 networks:
   petfeeder-network:
     driver: bridge
 
 volumes:
   mysql-data:
-    driver: local
-  mosquitto-data:
     driver: local
   logs-data:
     driver: local
