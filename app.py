@@ -114,17 +114,20 @@ def login():
             flash("Koneksi database gagal!", "danger")
             return render_template("auth/login.html")
 
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM users WHERE username = %s", (un,))
-        user = cursor.fetchone()
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM users WHERE username = %s", (un,))
+            user = cursor.fetchone()
 
-        if user and bcrypt.check_password_hash(user["password_hash"], pw):
-            session.update({"user_id": user["user_id"], "username": user["username"]})
-            return redirect(url_for("dashboard"))
+            if user and bcrypt.check_password_hash(user["password_hash"], pw):
+                session.update({"user_id": user["user_id"], "username": user["username"]})
+                return redirect(url_for("dashboard"))
 
-        flash("Username atau password salah!", "danger")
-        cursor.close()
-        conn.close()
+            flash("Username atau password salah!", "danger")
+        finally:
+            if conn and conn.is_connected():
+                cursor.close()
+                conn.close()
     return render_template("auth/login.html")
 
 
@@ -180,26 +183,29 @@ def dashboard():
         return redirect(url_for("onboarding_choice"))
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute(
-        "SELECT * FROM feeding_logs WHERE device_id = %s ORDER BY timestamp DESC LIMIT 10",
-        (data["device_id"],),
-    )
-    logs = cursor.fetchall()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT * FROM feeding_logs WHERE device_id = %s ORDER BY timestamp DESC LIMIT 10",
+            (data["device_id"],),
+        )
+        logs = cursor.fetchall()
 
-    pantry = (
-        round((data["current_stock"] / data["max_capacity"]) * 100)
-        if data["max_capacity"] > 0
-        else 0
-    )
-    is_owner = data["owner_id"] == session["user_id"]
+        pantry = (
+            round((data["current_stock"] / data["max_capacity"]) * 100)
+            if data["max_capacity"] > 0
+            else 0
+        )
+        is_owner = data["owner_id"] == session["user_id"]
 
-    cursor.close()
-    conn.close()
-    data["id"] = data["device_id"]
-    return render_template(
-        "dashboard/index.html", data=data, logs=logs, pantry=pantry, is_owner=is_owner
-    )
+        data["id"] = data["device_id"]
+        return render_template(
+            "dashboard/index.html", data=data, logs=logs, pantry=pantry, is_owner=is_owner
+        )
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
 
 
 @app.route("/stats")
@@ -211,43 +217,46 @@ def stats():
         return redirect(url_for("onboarding_choice"))
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor = conn.cursor(dictionary=True)
 
-    # 1. Ambil data 7 hari terakhir dari DB
-    # Gunakan DATE_FORMAT agar string tanggal konsisten dengan Python
-    cursor.execute(
-        """
-        SELECT DATE_FORMAT(timestamp, '%Y-%m-%d') as feed_date, SUM(grams_out) as total
-        FROM feeding_logs
-        WHERE device_id = %s AND timestamp >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-        GROUP BY feed_date
-    """,
-        (data["device_sn"],),
-    )
+        # 1. Ambil data 7 hari terakhir dari DB
+        # Gunakan DATE_FORMAT agar string tanggal konsisten dengan Python
+        cursor.execute(
+            """
+            SELECT DATE_FORMAT(timestamp, '%Y-%m-%d') as feed_date, SUM(grams_out) as total
+            FROM feeding_logs
+            WHERE device_id = %s AND timestamp >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+            GROUP BY feed_date
+        """,
+            (data["device_id"],),
+        )
 
-    db_results = {row["feed_date"]: row["total"] for row in cursor.fetchall()}
+        db_results = {row["feed_date"]: row["total"] for row in cursor.fetchall()}
 
-    # 2. Bangun dataset 7 hari (isi 0 jika hari tersebut tidak ada di DB)
-    weekly_data = []
-    today = datetime.now().date()
-    today_total = 0
+        # 2. Bangun dataset 7 hari (isi 0 jika hari tersebut tidak ada di DB)
+        weekly_data = []
+        today = datetime.now().date()
+        today_total = 0
 
-    for i in range(6, -1, -1):
-        target_date = today - timedelta(days=i)
-        date_str = target_date.strftime("%Y-%m-%d")  # Pastikan format YYYY-MM-DD
-        total_grams = db_results.get(date_str, 0)
+        for i in range(6, -1, -1):
+            target_date = today - timedelta(days=i)
+            date_str = target_date.strftime("%Y-%m-%d")  # Pastikan format YYYY-MM-DD
+            total_grams = db_results.get(date_str, 0)
 
-        label = target_date.strftime("%d %b") if i != 0 else "Hari Ini"
-        weekly_data.append({"label": label, "total": float(total_grams)})
+            label = target_date.strftime("%d %b") if i != 0 else "Hari Ini"
+            weekly_data.append({"label": label, "total": float(total_grams)})
 
-        if i == 0:
-            today_total = float(total_grams)
+            if i == 0:
+                today_total = float(total_grams)
 
-    cursor.close()
-    conn.close()
-    return render_template(
-        "dashboard/stats.html", data=data, weekly_data=weekly_data, today_total=today_total
-    )
+        return render_template(
+            "dashboard/stats.html", data=data, weekly_data=weekly_data, today_total=today_total
+        )
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
 
 
 # ... (Route schedules, profile, onboarding tetap sama) ...
@@ -261,25 +270,29 @@ def schedules():
     if not data:
         return redirect(url_for("onboarding_choice"))
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute(
-        "SELECT id, waktu AS time, porsi_gram AS grams, mode FROM feeding_schedules WHERE device_id = %s ORDER BY waktu ASC",
-        (data["device_id"],),
-    )
-    scheds = cursor.fetchall()
-    for s in scheds:
-        if isinstance(s["time"], timedelta):
-            s["time"] = (datetime.min + s["time"]).time()
-    is_owner = data["owner_id"] == session["user_id"]
-    cursor.close()
-    conn.close()
-    return render_template(
-        "dashboard/schedules.html",
-        data=data,
-        schedules=scheds,
-        has_system=any(s["mode"] == "system" for s in scheds),
-        is_owner=is_owner,
-    )
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT id, waktu AS time, porsi_gram AS grams, mode FROM feeding_schedules WHERE device_id = %s ORDER BY waktu ASC",
+            (data["device_id"],),
+        )
+        scheds = cursor.fetchall()
+        for s in scheds:
+            if isinstance(s["time"], timedelta):
+                s["time"] = (datetime.min + s["time"]).time()
+        is_owner = data["owner_id"] == session["user_id"]
+
+        return render_template(
+            "dashboard/schedules.html",
+            data=data,
+            schedules=scheds,
+            has_system=any(s["mode"] == "system" for s in scheds),
+            is_owner=is_owner,
+        )
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
 
 
 @app.route("/profile")

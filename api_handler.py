@@ -9,6 +9,7 @@ import mysql.connector
 import paho.mqtt.client as mqtt
 from flask import flash, jsonify, redirect, request, session, url_for
 
+from db_pool import db_pool
 from nutrition_logic import PetNutritionManager
 
 # Memori cache untuk mencegah pesan ganda (Anti-Duplikasi)
@@ -16,13 +17,9 @@ mqtt_cache = {}
 CACHE_EXPIRY = 5  # seconds - window untuk detect duplicate messages
 
 
+
 def get_db_connection(app):
-    return mysql.connector.connect(
-        host=app.config["MYSQL_HOST"],
-        user=app.config["MYSQL_USER"],
-        password=app.config["MYSQL_PASSWORD"],
-        database=app.config["MYSQL_DB"],
-    )
+    return db_pool.get_connection()
 
 
 def trigger_sync(app, mqtt_client, device_id_pk):
