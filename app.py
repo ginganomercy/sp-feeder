@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 import mysql.connector
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_bcrypt import Bcrypt
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -114,6 +114,7 @@ def login():
             flash("Koneksi database gagal!", "danger")
             return render_template("auth/login.html")
 
+        cursor = None
         try:
             cursor = conn.cursor(dictionary=True)
             cursor.execute("SELECT * FROM users WHERE username = %s", (un,))
@@ -340,11 +341,11 @@ def scan_device():
 def get_logs():
     if "user_id" not in session:
         return jsonify({"status": "error", "message": "Unauthorized"}), 401
-    
+
     data = get_user_device_data(session["user_id"])
     if not data:
         return jsonify({"status": "error", "message": "No device"}), 404
-        
+
     conn = get_db_connection()
     try:
         cursor = conn.cursor(dictionary=True)
@@ -353,7 +354,7 @@ def get_logs():
             (data["device_id"],),
         )
         logs = cursor.fetchall()
-        
+
         # Format dates for JSON
         formatted_logs = []
         for log in logs:
@@ -363,7 +364,7 @@ def get_logs():
                 "date": log["timestamp"].strftime('%d %b'),
                 "grams_out": log["grams_out"]
             })
-            
+
         return jsonify({"status": "success", "logs": formatted_logs})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

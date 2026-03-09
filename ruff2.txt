@@ -1,0 +1,61 @@
+invalid-syntax: Expected `except` or `finally` after `try` block
+   --> api_handler.py:203:9
+    |
+201 |                     print(f"[ALERT] {device_name} stock LOW: {new_stock}g remaining!")
+202 |
+203 |         except mysql.connector.Error as e:
+    |         ^
+204 |             print(f"[DB] Database error handling device status: {e}")
+205 |             if conn:
+    |
+
+W293 [*] Blank line contains whitespace
+   --> app.py:344:1
+    |
+342 |     if "user_id" not in session:
+343 |         return jsonify({"status": "error", "message": "Unauthorized"}), 401
+344 |     
+    | ^^^^
+345 |     data = get_user_device_data(session["user_id"])
+346 |     if not data:
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> app.py:348:1
+    |
+346 |     if not data:
+347 |         return jsonify({"status": "error", "message": "No device"}), 404
+348 |         
+    | ^^^^^^^^
+349 |     conn = get_db_connection()
+350 |     try:
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> app.py:357:1
+    |
+355 |         )
+356 |         logs = cursor.fetchall()
+357 |         
+    | ^^^^^^^^
+358 |         # Format dates for JSON
+359 |         formatted_logs = []
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> app.py:367:1
+    |
+365 |                 "grams_out": log["grams_out"]
+366 |             })
+367 |             
+    | ^^^^^^^^^^^^
+368 |         return jsonify({"status": "success", "logs": formatted_logs})
+369 |     except Exception as e:
+    |
+help: Remove whitespace from blank line
+
+Found 5 errors.
+[*] 4 fixable with the `--fix` option.

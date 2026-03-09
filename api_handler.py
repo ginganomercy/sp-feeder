@@ -125,6 +125,7 @@ def init_api(app, bcrypt):
             data: JSON payload with porsi and metode
         """
         conn = None
+        cursor = None
         try:
             porsi = data.get("porsi", 0)
             metode = data.get("metode", "manual")
@@ -205,8 +206,9 @@ def init_api(app, bcrypt):
         except Exception as e:
             print(f"[ERROR] Unexpected error in handle_device_status: {e}")
         finally:
-            if conn and conn.is_connected():
+            if cursor:
                 cursor.close()
+            if conn and conn.is_connected():
                 conn.close()
 
     def on_connect(client, userdata, flags, reason_code):

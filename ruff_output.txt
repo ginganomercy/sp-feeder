@@ -1,0 +1,104 @@
+invalid-syntax: Expected `except` or `finally` after `try` block
+   --> api_handler.py:169:13
+    |
+168 |                 # Find device in database by device_sn
+169 |             cursor.execute(
+    |             ^^^^^^
+170 |                 "SELECT id, current_stock, nickname FROM devices WHERE device_sn = %s", (device_id,)
+171 |             )
+    |
+
+F821 Undefined name `jsonify`
+   --> app.py:343:16
+    |
+341 | def get_logs():
+342 |     if "user_id" not in session:
+343 |         return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    |                ^^^^^^^
+344 |     
+345 |     data = get_user_device_data(session["user_id"])
+    |
+
+W293 [*] Blank line contains whitespace
+   --> app.py:344:1
+    |
+342 |     if "user_id" not in session:
+343 |         return jsonify({"status": "error", "message": "Unauthorized"}), 401
+344 |     
+    | ^^^^
+345 |     data = get_user_device_data(session["user_id"])
+346 |     if not data:
+    |
+help: Remove whitespace from blank line
+
+F821 Undefined name `jsonify`
+   --> app.py:347:16
+    |
+345 |     data = get_user_device_data(session["user_id"])
+346 |     if not data:
+347 |         return jsonify({"status": "error", "message": "No device"}), 404
+    |                ^^^^^^^
+348 |         
+349 |     conn = get_db_connection()
+    |
+
+W293 [*] Blank line contains whitespace
+   --> app.py:348:1
+    |
+346 |     if not data:
+347 |         return jsonify({"status": "error", "message": "No device"}), 404
+348 |         
+    | ^^^^^^^^
+349 |     conn = get_db_connection()
+350 |     try:
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> app.py:357:1
+    |
+355 |         )
+356 |         logs = cursor.fetchall()
+357 |         
+    | ^^^^^^^^
+358 |         # Format dates for JSON
+359 |         formatted_logs = []
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> app.py:367:1
+    |
+365 |                 "grams_out": log["grams_out"]
+366 |             })
+367 |             
+    | ^^^^^^^^^^^^
+368 |         return jsonify({"status": "success", "logs": formatted_logs})
+369 |     except Exception as e:
+    |
+help: Remove whitespace from blank line
+
+F821 Undefined name `jsonify`
+   --> app.py:368:16
+    |
+366 |             })
+367 |             
+368 |         return jsonify({"status": "success", "logs": formatted_logs})
+    |                ^^^^^^^
+369 |     except Exception as e:
+370 |         return jsonify({"status": "error", "message": str(e)}), 500
+    |
+
+F821 Undefined name `jsonify`
+   --> app.py:370:16
+    |
+368 |         return jsonify({"status": "success", "logs": formatted_logs})
+369 |     except Exception as e:
+370 |         return jsonify({"status": "error", "message": str(e)}), 500
+    |                ^^^^^^^
+371 |     finally:
+372 |         if conn and conn.is_connected():
+    |
+
+Found 9 errors.
+[*] 4 fixable with the `--fix` option.
