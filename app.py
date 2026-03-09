@@ -83,10 +83,11 @@ def get_user_device_data(user_id):
         cursor = conn.cursor(dictionary=True)
         cursor.execute(
             """
-            SELECT d.id as device_id, d.device_sn, d.current_stock, d.max_capacity, d.owner_id,
+            SELECT d.device_id, d.device_sn, d.current_stock, d.max_capacity,
                    p.name, p.species, p.category, p.weight_kg, p.kcal_per_kg, p.daily_target_grams
-            FROM devices d LEFT JOIN pets p ON d.id = p.device_id
-            WHERE d.owner_id = %s LIMIT 1
+            FROM pets p
+            JOIN devices d ON d.pet_id = p.pet_id
+            WHERE p.user_id = %s LIMIT 1
         """,
             (user_id,),
         )
@@ -117,8 +118,8 @@ def login():
         cursor.execute("SELECT * FROM users WHERE username = %s", (un,))
         user = cursor.fetchone()
 
-        if user and bcrypt.check_password_hash(user["password"], pw):
-            session.update({"user_id": user["id"], "username": user["username"]})
+        if user and bcrypt.check_password_hash(user["password_hash"], pw):
+            session.update({"user_id": user["user_id"], "username": user["username"]})
             return redirect(url_for("dashboard"))
 
         flash("Username atau password salah!", "danger")
@@ -141,7 +142,7 @@ def register():
         try:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO users (username, email, password) VALUES (%s, %s, %s)",
+                "INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s)",
                 (un, em, pw_hash),
             )
             conn.commit()
