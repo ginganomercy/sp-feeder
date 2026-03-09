@@ -332,6 +332,9 @@ def init_api(app, bcrypt):
         d_id = request.form.get("device_id")
         t, g = request.form.get("time"), request.form.get("grams")
         conn = get_db_connection(app)
+        if not conn:
+            flash("Database sedang penuh antreannya. Coba lagi.", "warning")
+            return redirect(url_for("schedules"))
         try:
             cursor = conn.cursor()
             cursor.execute(
@@ -344,7 +347,8 @@ def init_api(app, bcrypt):
             conn.commit()
             trigger_sync(app, client, d_id)
         finally:
-            conn.close()
+            if conn:
+                conn.close()
         return redirect(url_for("schedules"))
 
     @app.route("/api/edit_schedule", methods=["POST"])
@@ -352,6 +356,9 @@ def init_api(app, bcrypt):
         s_id = request.form.get("schedule_id")
         t, g = request.form.get("time"), request.form.get("grams")
         conn = get_db_connection(app)
+        if not conn:
+            flash("Database sibuk. Coba lagi.", "warning")
+            return redirect(url_for("schedules"))
         try:
             cursor = conn.cursor(dictionary=True)
             cursor.execute("SELECT device_id, mode FROM feeding_schedules WHERE id = %s", (s_id,))
@@ -367,12 +374,16 @@ def init_api(app, bcrypt):
                 conn.commit()
                 trigger_sync(app, client, s["device_id"])
         finally:
-            conn.close()
+            if conn:
+                conn.close()
         return redirect(url_for("schedules"))
 
     @app.route("/api/delete_schedule/<int:id>")
     def delete_schedule(id):
         conn = get_db_connection(app)
+        if not conn:
+            flash("Koneksi gagal. Coba lagi secukupnya.", "danger")
+            return redirect(url_for("schedules"))
         try:
             cursor = conn.cursor(dictionary=True)
             cursor.execute("SELECT device_id FROM feeding_schedules WHERE id = %s", (id,))
@@ -383,13 +394,17 @@ def init_api(app, bcrypt):
                 conn.commit()
                 trigger_sync(app, client, d_id)
         finally:
-            conn.close()
+            if conn:
+                conn.close()
         return redirect(url_for("schedules"))
 
     @app.route("/api/apply_recommendation", methods=["POST"])
     def apply_recommendation():
         d_id = request.form.get("device_id")
         conn = get_db_connection(app)
+        if not conn:
+            flash("Database gangguan. Silakan coba lagi nanti.", "danger")
+            return redirect(url_for("schedules"))
         try:
             cursor = conn.cursor(dictionary=True)
             cursor.execute(
@@ -401,7 +416,8 @@ def init_api(app, bcrypt):
                 conn.commit()
                 trigger_sync(app, client, d_id)
         finally:
-            conn.close()
+            if conn:
+                conn.close()
         return redirect(url_for("schedules"))
 
     @app.route("/api/update_pet", methods=["POST"])
@@ -412,6 +428,9 @@ def init_api(app, bcrypt):
         kcal = int(request.form.get("kcal", 4000))
         target = PetNutritionManager.calculate_daily_grams(species, category, weight, kcal)
         conn = get_db_connection(app)
+        if not conn:
+            flash("Database gangguan. Silakan coba lagi.", "danger")
+            return redirect(url_for("profile"))
         try:
             cursor = conn.cursor()
             cursor.execute(
@@ -422,7 +441,8 @@ def init_api(app, bcrypt):
             conn.commit()
             trigger_sync(app, client, d_id)
         finally:
-            conn.close()
+            if conn:
+                conn.close()
         return redirect(url_for("profile"))
 
     @app.route("/api/feed_now", methods=["POST"])
@@ -439,6 +459,9 @@ def init_api(app, bcrypt):
     def refill():
         d_id, amt = request.form.get("device_id"), request.form.get("amount")
         conn = get_db_connection(app)
+        if not conn:
+            flash("Database penuh, coba ulangi memoles tombol refill secukupnya.", "warning")
+            return redirect(url_for("dashboard"))
         try:
             cursor = conn.cursor()
             # Mencegah stok melebihi max_capacity (600g)
@@ -452,7 +475,8 @@ def init_api(app, bcrypt):
             conn.commit()
             flash("Stok Pantry diperbarui.", "success")
         finally:
-            conn.close()
+            if conn:
+                conn.close()
         return redirect(url_for("dashboard"))
 
     @app.route("/api/reset_password", methods=["POST"])
@@ -461,6 +485,9 @@ def init_api(app, bcrypt):
         if new_pw:
             pw_h = bcrypt.generate_password_hash(new_pw).decode("utf-8")
             conn = get_db_connection(app)
+            if not conn:
+                flash("Sistem tidak merespon penyetelan ulang sandi. Silakan ulangi.", "danger")
+                return redirect(url_for("profile"))
             try:
                 cursor = conn.cursor()
                 cursor.execute(
@@ -469,7 +496,8 @@ def init_api(app, bcrypt):
                 conn.commit()
                 flash("Password diubah!", "success")
             finally:
-                conn.close()
+                if conn:
+                    conn.close()
         return redirect(url_for("profile"))
 
     @app.route("/api/reset_device")
@@ -477,6 +505,10 @@ def init_api(app, bcrypt):
         """Memperbaiki error reset alat dengan urutan delete yang benar."""
         user_id = session.get("user_id")
         conn = get_db_connection(app)
+        if not conn:
+            flash("Database sedang sibuk. Silakan coba lagi.", "danger")
+            return redirect(url_for("profile"))
+
         try:
             cursor = conn.cursor(dictionary=True)
 
@@ -500,10 +532,12 @@ def init_api(app, bcrypt):
                 conn.commit()
                 flash("Alat berhasil di-reset dan dilepaskan.", "info")
         except Exception as e:
-            conn.rollback()
+            if conn:
+                conn.rollback()
             print(f"[RESET ERROR] {e}")
             flash("Gagal mereset alat. Silakan coba lagi.", "danger")
         finally:
-            conn.close()
+            if conn:
+                conn.close()
 
         return redirect(url_for("onboarding_choice"))
