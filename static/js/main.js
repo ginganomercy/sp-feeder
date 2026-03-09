@@ -103,14 +103,29 @@ function resetWaterTimer() {
 
 // 4. Update Logs Real-time via Polling
 let logPollingInterval;
+let clientLastLogId = null;
+let clientLastStock = null;
 
 async function refreshLogs() {
     try {
-        const response = await fetch('/api/logs?t=' + new Date().getTime());
+        let url = '/api/logs?t=' + new Date().getTime();
+        if (clientLastLogId !== null && clientLastStock !== null) {
+            url += `&last_log=${clientLastLogId}&last_stock=${clientLastStock}`;
+        }
+
+        const response = await fetch(url);
         if (!response.ok) return;
 
         const data = await response.json();
+
+        if (data.status === 'not_modified') {
+            return; // Tidak ada perubahan, lewati update DOM
+        }
+
         if (data.status === 'success') {
+            clientLastLogId = data.max_log_id;
+            clientLastStock = data.current_stock;
+
             // Update Sisa Pakan UI
             const stockVal = data.current_stock;
             const maxCap = data.max_capacity || 600;

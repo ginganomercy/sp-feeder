@@ -342,23 +342,44 @@ def get_logs():
     if "user_id" not in session:
         return jsonify({"status": "error", "message": "Unauthorized"}), 401
 
-    data = get_user_device_data(session["user_id"])
-    if not data:
-        return jsonify({"status": "error", "message": "No device"}), 404
+    client_max_log = request.args.get('last_log', type=int)
+    client_stock = request.args.get('last_stock', type=int)
 
     conn = get_db_connection()
     try:
         cursor = conn.cursor(dictionary=True)
+
+        # 1. Get user's device info efficiently
+        cursor.execute("SELECT id, current_stock, max_capacity FROM devices WHERE owner_id = %s LIMIT 1", (session["user_id"],))
+        device = cursor.fetchone()
+
+        if not device:
+            return jsonify({"status": "error", "message": "No device"}), 404
+
+        device_id = device["id"]
+        current_stock = device["current_stock"]
+
+        # 2. Check max log id (fast aggregate query)
+        cursor.execute("SELECT IFNULL(MAX(log_id), 0) as max_log FROM feeding_logs WHERE device_id = %s", (device_id,))
+        max_log = cursor.fetchone()["max_log"]
+
+        # 3. Return 304 equivalent if nothing changed since last poll
+        if client_max_log is not None and client_stock is not None:
+            if max_log == client_max_log and current_stock == client_stock:
+                return jsonify({"status": "not_modified"}), 200
+
+        # 4. If data changed, fetch the actual logs
         cursor.execute(
-            "SELECT method, timestamp, grams_out FROM feeding_logs WHERE device_id = %s ORDER BY timestamp DESC LIMIT 10",
-            (data["device_id"],),
+            "SELECT log_id, method, timestamp, grams_out FROM feeding_logs WHERE device_id = %s ORDER BY timestamp DESC LIMIT 10",
+            (device_id,),
         )
         logs = cursor.fetchall()
 
-        # Format dates for JSON
+        # Format JSON precisely
         formatted_logs = []
         for log in logs:
             formatted_logs.append({
+                "log_id": log["log_id"],
                 "method": log["method"],
                 "time": log["timestamp"].strftime('%H:%M'),
                 "date": log["timestamp"].strftime('%d %b'),
@@ -368,8 +389,9 @@ def get_logs():
         return jsonify({
             "status": "success",
             "logs": formatted_logs,
-            "current_stock": data["current_stock"],
-            "max_capacity": data["max_capacity"]
+            "current_stock": current_stock,
+            "max_capacity": device["max_capacity"],
+            "max_log_id": max_log
         })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
