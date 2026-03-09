@@ -116,12 +116,29 @@ async function refreshLogs() {
             const maxCap = data.max_capacity || 600;
             const percentage = Math.min(100, Math.round((stockVal / maxCap) * 100));
 
-            const stockFill = document.querySelector('.stock-fill');
+            const stockFill = document.getElementById('pantry-fill');
             const stockPercentageText = document.getElementById('stockPercentage');
             const stockGramsText = document.getElementById('stockGrams');
 
-            if (stockFill) stockFill.style.height = percentage + '%';
-            if (stockPercentageText) stockPercentageText.textContent = percentage + '%';
+            if (stockFill) {
+                stockFill.style.height = percentage + '%';
+                stockFill.setAttribute('data-percent', percentage);
+                if (percentage < 20) {
+                    stockFill.classList.add('pantry-fill-low');
+                } else {
+                    stockFill.classList.remove('pantry-fill-low');
+                }
+            }
+            if (stockPercentageText) {
+                stockPercentageText.textContent = percentage + '%';
+                if (percentage < 20) {
+                    stockPercentageText.classList.remove('text-primary');
+                    stockPercentageText.classList.add('text-danger');
+                } else {
+                    stockPercentageText.classList.remove('text-danger');
+                    stockPercentageText.classList.add('text-primary');
+                }
+            }
             if (stockGramsText) stockGramsText.textContent = '(' + stockVal + 'g)';
             const logContainer = document.querySelector('.log-scroll-area');
             if (!logContainer) return;

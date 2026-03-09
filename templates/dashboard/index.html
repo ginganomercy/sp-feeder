@@ -17,7 +17,8 @@
 
     /* Professional Status Pulse */
     .status-pulse {
-        width: 10px; height: 10px;
+        width: 10px;
+        height: 10px;
         background-color: #2ecc71;
         border-radius: 50%;
         display: inline-block;
@@ -27,9 +28,17 @@
     }
 
     @keyframes pulse-green {
-        0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
-        70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        0% {
+            box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(46, 204, 113, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+        }
     }
 
     /* Glassmorphism Cards */
@@ -56,9 +65,19 @@
     }
 
     @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-5px); }
-        75% { transform: translateX(5px); }
+
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+
+        25% {
+            transform: translateX(-5px);
+        }
+
+        75% {
+            transform: translateX(5px);
+        }
     }
 
     /* Pet Profile Hero Card */
@@ -107,7 +126,7 @@
     }
 
     .log-item:hover {
-        background: rgba(255,255,255,0.5);
+        background: rgba(255, 255, 255, 0.5);
     }
 
     /* Buttons */
@@ -117,13 +136,15 @@
         box-shadow: 0 4px 15px rgba(255, 159, 67, 0.2);
     }
 
-    .feed-btn:active { transform: scale(0.95); }
+    .feed-btn:active {
+        transform: scale(0.95);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="dashboard-wrapper pb-5 px-3">
-    
+
     <!-- 1. Header -->
     <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
         <div>
@@ -139,130 +160,141 @@
     </div>
 
     <!-- 2. NOTIFIKASI STOK RENDAH -->
-    {% if pantry < 20 %}
-    <div class="alert-pantry-low shadow-sm">
+    {% if pantry < 20 %} <div class="alert-pantry-low shadow-sm">
         <i class="fas fa-exclamation-triangle fa-lg me-3"></i>
         <div>
             <small class="fw-bold d-block">Stok Pakan Menipis!</small>
             <small style="font-size: 11px; opacity: 0.9;">Tersisa {{ pantry }}%. Segera refill wadah Anda.</small>
         </div>
-    </div>
-    {% endif %}
+</div>
+{% endif %}
 
-    <!-- 3. Pet Info Card (Hero) -->
-    <div class="pet-hero shadow-lg mb-4">
-        <div class="row align-items-center">
-            <div class="col-8">
-                <div class="badge bg-white bg-opacity-25 rounded-pill px-3 py-1 mb-2 small">
-                    <i class="fas fa-microchip me-1"></i> ID: {{ data['device_sn'] }}
-                </div>
-                <h1 class="fw-bold mb-1">{{ data['name'] }}</h1>
-                <p class="mb-0 opacity-75 small">
-                    Target: <strong>{{ data['daily_target_grams'] }}g/hari</strong>
+<!-- 3. Pet Info Card (Hero) -->
+<div class="pet-hero shadow-lg mb-4">
+    <div class="row align-items-center">
+        <div class="col-8">
+            <div class="badge bg-white bg-opacity-25 rounded-pill px-3 py-1 mb-2 small">
+                <i class="fas fa-microchip me-1"></i> ID: {{ data['device_sn'] }}
+            </div>
+            <h1 class="fw-bold mb-1">{{ data['name'] }}</h1>
+            <p class="mb-0 opacity-75 small">
+                Target: <strong>{{ data['daily_target_grams'] }}g/hari</strong>
+            </p>
+            <div class="mt-3">
+                <span class="badge rounded-pill bg-white text-dark py-2 px-3 fw-bold">
+                    <i class="fas fa-weight me-1 text-primary"></i> {{ data['weight_kg'] }} kg
+                </span>
+            </div>
+        </div>
+        <div class="col-4 text-center">
+            <div class="bg-white bg-opacity-20 rounded-circle d-inline-flex align-items-center justify-content-center"
+                style="width: 85px; height: 85px; backdrop-filter: blur(5px);">
+                <span style="font-size: 45px;">{{ '🐱' if data['species'] == 'cat' else '🐶' }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Widgets Grid -->
+<div class="row g-3 mb-4">
+    <!-- Virtual Pantry -->
+    <div class="col-6">
+        <div class="glass-card p-3 h-100 text-center">
+            <h6 class="fw-bold small mb-3 text-muted">SISA PAKAN</h6>
+            <div class="pantry-bar-container">
+                <div id="pantry-fill" class="pantry-fill-inner {{ 'pantry-fill-low' if pantry < 20 }}"
+                    data-percent="{{ pantry }}"></div>
+            </div>
+            <div class="mt-3">
+                <h4 id="stockPercentage" class="fw-bold {{ 'text-danger' if pantry < 20 else 'text-primary' }} mb-1">
+                    {{ pantry }}%
+                </h4>
+                <p id="stockGrams" class="text-muted mb-2" style="font-size: 12px; font-weight: 600;">
+                    ({{ data['current_stock']|round|int }}g)
                 </p>
-                <div class="mt-3">
-                    <span class="badge rounded-pill bg-white text-dark py-2 px-3 fw-bold">
-                        <i class="fas fa-weight me-1 text-primary"></i> {{ data['weight_kg'] }} kg
-                    </span>
-                </div>
-            </div>
-            <div class="col-4 text-center">
-                <div class="bg-white bg-opacity-20 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 85px; height: 85px; backdrop-filter: blur(5px);">
-                    <span style="font-size: 45px;">{{ '🐱' if data['species'] == 'cat' else '🐶' }}</span>
-                </div>
+                <button
+                    class="btn btn-sm {{ 'btn-danger' if pantry < 20 else 'btn-outline-primary' }} w-100 rounded-pill border-2 fw-bold"
+                    style="font-size: 11px;" data-bs-toggle="modal" data-bs-target="#refillModal">
+                    REFILL
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- 4. Widgets Grid -->
-    <div class="row g-3 mb-4">
-        <!-- Virtual Pantry -->
-        <div class="col-6">
-            <div class="glass-card p-3 h-100 text-center">
-                <h6 class="fw-bold small mb-3 text-muted">SISA PAKAN</h6>
-                <div class="pantry-bar-container">
-                    <div id="pantry-fill" class="pantry-fill-inner {{ 'pantry-fill-low' if pantry < 20 }}" data-percent="{{ pantry }}"></div>
-                </div>
-                <div class="mt-3">
-                    <h4 class="fw-bold {{ 'text-danger' if pantry < 20 else 'text-primary' }} mb-1">
-                        {{ pantry }}%
-                    </h4>
-                    <p class="text-muted mb-2" style="font-size: 12px; font-weight: 600;">
-                        ({{ data['current_stock']|round|int }}g)
-                    </p>
-                    <button class="btn btn-sm {{ 'btn-danger' if pantry < 20 else 'btn-outline-primary' }} w-100 rounded-pill border-2 fw-bold" style="font-size: 11px;" data-bs-toggle="modal" data-bs-target="#refillModal">
-                        REFILL
-                    </button>
-                </div>
+    <!-- Hydration Reminder -->
+    <div class="col-6">
+        <div class="glass-card p-3 h-100 text-center d-flex flex-column justify-content-between"
+            style="background: rgba(235, 245, 255, 0.6);">
+            <h6 class="fw-bold small mb-2 text-muted">CEK AIR</h6>
+            <div class="py-2">
+                <button id="water-btn" onclick="resetWaterTimer()" class="water-icon-btn active shadow-sm">
+                    <i class="fas fa-tint"></i>
+                </button>
+            </div>
+            <div>
+                <p id="water-status" class="small mb-0 fw-bold text-primary" style="font-size: 11px;">SEGARKAN AIR!</p>
             </div>
         </div>
-        
-        <!-- Hydration Reminder -->
-        <div class="col-6">
-            <div class="glass-card p-3 h-100 text-center d-flex flex-column justify-content-between" style="background: rgba(235, 245, 255, 0.6);">
-                <h6 class="fw-bold small mb-2 text-muted">CEK AIR</h6>
-                <div class="py-2">
-                    <button id="water-btn" onclick="resetWaterTimer()" class="water-icon-btn active shadow-sm">
-                        <i class="fas fa-tint"></i>
-                    </button>
+    </div>
+</div>
+
+<!-- 5. Manual Feed Panel -->
+<div class="glass-card p-4 mb-4 text-center">
+    <h6 class="fw-bold mb-3 text-muted small text-uppercase" style="letter-spacing: 1px;">KONTROL PAKAN MANUAL</h6>
+    <div class="d-flex justify-content-center gap-3">
+        <button onclick="feedNow('{{ data['device_sn'] }}', 10)"
+            class="feed-btn btn btn-warning text-white rounded-pill px-3 fw-bold">10g</button>
+        <button onclick="feedNow('{{ data['device_sn'] }}', 20)"
+            class="feed-btn btn btn-warning text-white rounded-pill px-3 fw-bold">20g</button>
+        <button onclick="feedNow('{{ data['device_sn'] }}', 50)"
+            class="feed-btn btn btn-warning text-white rounded-pill px-3 fw-bold">50g</button>
+    </div>
+</div>
+
+<!-- 6. Riwayat Aktivitas -->
+<div class="glass-card p-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h6 class="fw-bold mb-0 text-dark">Riwayat Aktivitas</h6>
+        <a href="{{ url_for('stats') }}" class="text-decoration-none small fw-bold text-primary">LIHAT STATISTIK</a>
+    </div>
+
+    <div class="log-scroll-area">
+        {% if logs %}
+        {% for log in logs %}
+        <div class="d-flex justify-content-between align-items-center py-3 border-bottom border-light log-item">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-white shadow-sm d-flex align-items-center justify-content-center me-3"
+                    style="width: 42px; height: 42px;">
+                    <i class="fas {{ 'fa-clock text-primary' if log['method'] == 'otomatis' else 'fa-hand-pointer text-warning' }}"
+                        style="font-size: 16px;"></i>
                 </div>
                 <div>
-                    <p id="water-status" class="small mb-0 fw-bold text-primary" style="font-size: 11px;">SEGARKAN AIR!</p>
+                    <span class="d-block fw-bold text-dark" style="font-size: 14px; text-transform: capitalize;">{{
+                        log['method'] }}</span>
+                    <small class="text-muted" style="font-size: 11px;">{{ log['timestamp'].strftime('%H:%M') }} &bull;
+                        {{ log['timestamp'].strftime('%d %b') }}</small>
                 </div>
             </div>
+            <div class="text-end">
+                <span class="badge bg-light text-dark rounded-pill py-2 px-3 fw-bold">{{ log['grams_out'] }}g</span>
+            </div>
         </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-center py-4">
+            <p class="text-muted small">Belum ada riwayat pakan.</p>
+        </div>
+        {% endif %}
     </div>
+</div>
 
-    <!-- 5. Manual Feed Panel -->
-    <div class="glass-card p-4 mb-4 text-center">
-        <h6 class="fw-bold mb-3 text-muted small text-uppercase" style="letter-spacing: 1px;">KONTROL PAKAN MANUAL</h6>
-        <div class="d-flex justify-content-center gap-3">
-            <button onclick="feedNow('{{ data['device_sn'] }}', 10)" class="feed-btn btn btn-warning text-white rounded-pill px-3 fw-bold">10g</button>
-            <button onclick="feedNow('{{ data['device_sn'] }}', 20)" class="feed-btn btn btn-warning text-white rounded-pill px-3 fw-bold">20g</button>
-            <button onclick="feedNow('{{ data['device_sn'] }}', 50)" class="feed-btn btn btn-warning text-white rounded-pill px-3 fw-bold">50g</button>
-        </div>
-    </div>
-
-    <!-- 6. Riwayat Aktivitas -->
-    <div class="glass-card p-4 mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h6 class="fw-bold mb-0 text-dark">Riwayat Aktivitas</h6>
-            <a href="{{ url_for('stats') }}" class="text-decoration-none small fw-bold text-primary">LIHAT STATISTIK</a>
-        </div>
-        
-        <div class="log-scroll-area">
-            {% if logs %}
-                {% for log in logs %}
-                <div class="d-flex justify-content-between align-items-center py-3 border-bottom border-light log-item">
-                    <div class="d-flex align-items-center">
-                        <div class="rounded-circle bg-white shadow-sm d-flex align-items-center justify-content-center me-3" style="width: 42px; height: 42px;">
-                            <i class="fas {{ 'fa-clock text-primary' if log['method'] == 'otomatis' else 'fa-hand-pointer text-warning' }}" style="font-size: 16px;"></i>
-                        </div>
-                        <div>
-                            <span class="d-block fw-bold text-dark" style="font-size: 14px; text-transform: capitalize;">{{ log['method'] }}</span>
-                            <small class="text-muted" style="font-size: 11px;">{{ log['timestamp'].strftime('%H:%M') }} &bull; {{ log['timestamp'].strftime('%d %b') }}</small>
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <span class="badge bg-light text-dark rounded-pill py-2 px-3 fw-bold">{{ log['grams_out'] }}g</span>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="text-center py-4">
-                    <p class="text-muted small">Belum ada riwayat pakan.</p>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Navigasi Bawah -->
-    <div class="bottom-nav glass-card mx-3 mb-3 border-0 shadow">
-        <a href="{{ url_for('dashboard') }}" class="nav-item active"><i class="fas fa-home fa-lg"></i></a>
-        <a href="{{ url_for('schedules') }}" class="nav-item"><i class="fas fa-calendar-alt fa-lg"></i></a>
-        <a href="{{ url_for('stats') }}" class="nav-item"><i class="fas fa-chart-bar fa-lg"></i></a>
-        <a href="{{ url_for('profile') }}" class="nav-item"><i class="fas fa-user-cog fa-lg"></i></a>
-    </div>
+<!-- Navigasi Bawah -->
+<div class="bottom-nav glass-card mx-3 mb-3 border-0 shadow">
+    <a href="{{ url_for('dashboard') }}" class="nav-item active"><i class="fas fa-home fa-lg"></i></a>
+    <a href="{{ url_for('schedules') }}" class="nav-item"><i class="fas fa-calendar-alt fa-lg"></i></a>
+    <a href="{{ url_for('stats') }}" class="nav-item"><i class="fas fa-chart-bar fa-lg"></i></a>
+    <a href="{{ url_for('profile') }}" class="nav-item"><i class="fas fa-user-cog fa-lg"></i></a>
+</div>
 </div>
 
 <!-- Modal Refill -->
@@ -270,43 +302,46 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0" style="border-radius: 30px;">
             <div class="modal-body p-4 text-center">
-                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                    style="width: 70px; height: 70px;">
                     <i class="fas fa-box-open text-primary fa-2x"></i>
                 </div>
                 <h5 class="fw-bold mb-2">Isi Ulang Pakan</h5>
-                
+
                 <!-- LOGIKA KALKULASI SISA RUANG -->
                 {% set remaining_space = (data['max_capacity'] - data['current_stock'])|round|int %}
-                {% if remaining_space < 0 %}{% set remaining_space = 0 %}{% endif %}
-                
-                <p class="text-muted small mb-4">
+                {% if remaining_space < 0 %}{% set remaining_space=0 %}{% endif %} <p class="text-muted small mb-4">
                     Sisa ruang tersedia: <strong>{{ remaining_space }}g</strong><br>
                     <small>(Kapasitas total wadah: 600g)</small>
-                </p>
+                    </p>
 
-                <form action="{{ url_for('refill') }}" method="POST">
-                    <input type="hidden" name="device_id" value="{{ data['device_id'] }}">
-                    <div class="mb-4">
-                        <div class="input-group input-group-lg">
-                            <!-- Batas maksimal input sekarang dinamis sesuai sisa ruang -->
-                            <input type="number" name="amount" class="form-control text-center bg-light border-0" 
-                                   placeholder="0" min="1" max="{{ remaining_space }}" 
-                                   style="border-radius: 15px 0 0 15px;" required>
-                            <span class="input-group-text bg-primary text-white border-0 px-4" style="border-radius: 0 15px 15px 0;">g</span>
+                    <form action="{{ url_for('refill') }}" method="POST">
+                        <input type="hidden" name="device_id" value="{{ data['device_id'] }}">
+                        <div class="mb-4">
+                            <div class="input-group input-group-lg">
+                                <!-- Batas maksimal input sekarang dinamis sesuai sisa ruang -->
+                                <input type="number" name="amount" class="form-control text-center bg-light border-0"
+                                    placeholder="0" min="1" max="{{ remaining_space }}"
+                                    style="border-radius: 15px 0 0 15px;" required>
+                                <span class="input-group-text bg-primary text-white border-0 px-4"
+                                    style="border-radius: 0 15px 15px 0;">g</span>
+                            </div>
+                            <small class="text-muted" style="font-size: 10px;">
+                                Input tidak boleh melebihi sisa ruang (maks {{ remaining_space }}g).
+                            </small>
                         </div>
-                        <small class="text-muted" style="font-size: 10px;">
-                            Input tidak boleh melebihi sisa ruang (maks {{ remaining_space }}g).
-                        </small>
-                    </div>
-                    <div class="d-grid gap-2">
-                        {% if remaining_space > 0 %}
-                            <button type="submit" class="btn btn-primary py-3 rounded-pill fw-bold shadow">SIMPAN STOK</button>
-                        {% else %}
-                            <button type="button" class="btn btn-secondary py-3 rounded-pill fw-bold shadow" disabled>WADAH SUDAH PENUH</button>
-                        {% endif %}
-                        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">BATAL</button>
-                    </div>
-                </form>
+                        <div class="d-grid gap-2">
+                            {% if remaining_space > 0 %}
+                            <button type="submit" class="btn btn-primary py-3 rounded-pill fw-bold shadow">SIMPAN
+                                STOK</button>
+                            {% else %}
+                            <button type="button" class="btn btn-secondary py-3 rounded-pill fw-bold shadow"
+                                disabled>WADAH SUDAH PENUH</button>
+                            {% endif %}
+                            <button type="button" class="btn btn-link text-muted text-decoration-none"
+                                data-bs-dismiss="modal">BATAL</button>
+                        </div>
+                    </form>
             </div>
         </div>
     </div>
