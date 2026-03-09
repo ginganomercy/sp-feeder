@@ -4,13 +4,13 @@ services:
     image: ${GHCR_IMAGE:-smart-pet-feeder:latest}
     container_name: smart-pet-feeder-web
     restart: unless-stopped
+    # Expose ke host agar Nginx di host bisa forward ke 127.0.0.1:5011
     ports:
       - "5011:5011"
     env_file:
       - .env.docker
     environment:
       # Pakai HiveMQ public broker (sama dengan firmware ESP32)
-      # Tidak perlu self-hosted mosquitto
       - MQTT_BROKER=broker.hivemq.com
       - MQTT_PORT=8883
     depends_on:
@@ -32,10 +32,8 @@ services:
     image: mysql:8.0
     container_name: smart-pet-feeder-db
     restart: unless-stopped
-    # env_file passes MYSQL_ROOT_PASSWORD, MYSQL_USER, MYSQL_PASSWORD
     env_file:
       - .env.docker
-    # MySQL image needs MYSQL_DATABASE (bukan MYSQL_DB) untuk inisialisasi DB
     environment:
       MYSQL_DATABASE: smart_pet_feeder
     volumes:
