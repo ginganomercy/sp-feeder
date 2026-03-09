@@ -421,13 +421,19 @@ def stream():
     device_id = data["device_id"]
 
     def event_generator():
+        import queue
         q = sse_announcer.listen()
         try:
             while True:
-                msg = q.get()  # Block until a message is received
-                if msg.get("device_id") == device_id:
-                    # Return formatted SSE string
-                    yield f"data: {json.dumps(msg)}\\n\\n"
+                try:
+                    # Timeout 45 detik (di bawah batas default 60-100s proxy/Cloudflare)
+                    msg = q.get(timeout=45)
+                    if msg.get("device_id") == device_id:
+                        # Return formatted SSE string
+                        yield f"data: {json.dumps(msg)}\\n\\n"
+                except queue.Empty:
+                    # Mengirim Komentar (ping) agar mencegah 504 Gateway Timeout di Nginx/Cloudflare
+                    yield ": keep-alive\\n\\n"
         except GeneratorExit:
             pass  # Client disconnected
 
