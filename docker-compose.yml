@@ -16,7 +16,7 @@ services:
     networks:
       - petfeeder-network
     volumes:
-      - ./logs:/app/logs
+      - logs-data:/app/logs
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5011/" ]
       interval: 30s
@@ -58,7 +58,6 @@ services:
     volumes:
       - ./docker/mosquitto/config:/mosquitto/config:ro
       - mosquitto-data:/mosquitto/data
-      - mosquitto-logs:/mosquitto/log
     networks:
       - petfeeder-network
 
@@ -71,5 +70,5 @@ volumes:
     driver: local
   mosquitto-data:
     driver: local
-  mosquitto-logs:
+  logs-data:
     driver: local
