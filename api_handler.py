@@ -471,8 +471,7 @@ def init_api(app, bcrypt):
         data = cursor.fetchone()
 
         if data:
-            d_pk = data["id"]  # ID (Integer)
-            d_sn = data["device_sn"]  # Serial Number (String)
+            d_pk = data["id"]  # ID integer (PK)
 
             try:
                 # 1. Hapus Feeding Logs (FK integer ke devices.id)
