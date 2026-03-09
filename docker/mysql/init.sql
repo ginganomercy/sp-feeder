@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS pets (
     device_id INT UNIQUE NOT NULL,
     name VARCHAR(50) NOT NULL,
     species ENUM('cat', 'dog') NOT NULL,
-    category ENUM('kitten', 'neutered_adult', 'intact_adult', 'senior') NOT NULL,
+    category ENUM('indoor', 'active', 'junior') NOT NULL,
     weight_kg DECIMAL(5,2) NOT NULL,
     kcal_per_kg INT NOT NULL,
     daily_target_grams INT NOT NULL,

@@ -99,7 +99,7 @@ jobs:
       - name: Sync docker-compose to server
         run: |
           rsync -avz \
-            docker-compose.yml \
+            docker-compose.yml docker/mysql \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
 
       - name: Write compose .env on server

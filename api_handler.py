@@ -437,7 +437,7 @@ def init_api(app, bcrypt):
             (amt, d_id),
         )
         cursor.execute(
-            "INSERT INTO pantry_refills (device_id, amount_added) VALUES (%s, %s)", (d_id, amt)
+            "INSERT INTO pantry_refills (device_id, grams_added) VALUES (%s, %s)", (d_id, amt)
         )
         conn.commit()
         conn.close()
@@ -452,7 +452,7 @@ def init_api(app, bcrypt):
             conn = get_db_connection(app)
             cursor = conn.cursor()
             cursor.execute(
-                "UPDATE users SET password = %s WHERE id = %s", (pw_h, session["user_id"])
+                "UPDATE users SET password_hash = %s WHERE user_id = %s", (pw_h, session["user_id"])
             )
             conn.commit()
             conn.close()
@@ -475,8 +475,8 @@ def init_api(app, bcrypt):
             d_sn = data["device_sn"]  # Serial Number (String)
 
             try:
-                # 1. Hapus Feeding Logs (menggunakan device_sn sesuai schema)
-                cursor.execute("DELETE FROM feeding_logs WHERE device_id = %s", (d_sn,))
+                # 1. Hapus Feeding Logs (FK integer ke devices.id)
+                cursor.execute("DELETE FROM feeding_logs WHERE device_id = %s", (d_pk,))
                 # 2. Hapus Pantry Refills (menggunakan device_id FK)
                 cursor.execute("DELETE FROM pantry_refills WHERE device_id = %s", (d_pk,))
                 # 3. Hapus Feeding Schedules (menggunakan device_id FK)
