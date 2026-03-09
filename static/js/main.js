@@ -106,7 +106,7 @@ let logPollingInterval;
 
 async function refreshLogs() {
     try {
-        const response = await fetch('/api/logs');
+        const response = await fetch('/api/logs?t=' + new Date().getTime());
         if (!response.ok) return;
 
         const data = await response.json();
