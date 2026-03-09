@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import mysql.connector
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_bcrypt import Bcrypt
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 import api_handler  # Mengimpor logika API, MQTT
 from config import Config
@@ -13,6 +14,12 @@ from logger_config import get_logger, setup_logging
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# ProxyFix: percaya header X-Forwarded-Proto dari Cloudflare Tunnel/Nginx
+# x_for=1: trust 1 proxy (Nginx), x_proto=1: trust X-Forwarded-Proto (https dari CF)
+# Tanpa ini: SESSION_COOKIE_SECURE tidak bekerja & url_for() generate http:// bukan https://
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
 bcrypt = Bcrypt(app)
 
 # Initialize logging
