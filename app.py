@@ -192,6 +192,11 @@ def dashboard():
         )
         logs = cursor.fetchall()
 
+        # Konversi timestamp UTC → WIB (UTC+7) untuk initial page render
+        WIB_OFFSET = timedelta(hours=7)
+        for log in logs:
+            log["timestamp"] = log["timestamp"] + WIB_OFFSET
+
         pantry = (
             round((data["current_stock"] / data["max_capacity"]) * 100)
             if data["max_capacity"] > 0
@@ -375,14 +380,16 @@ def get_logs():
         )
         logs = cursor.fetchall()
 
-        # Format JSON precisely
+        # Format JSON dengan konversi UTC → WIB (UTC+7)
+        WIB_OFFSET = timedelta(hours=7)
         formatted_logs = []
         for log in logs:
+            ts_wib = log["timestamp"] + WIB_OFFSET
             formatted_logs.append({
                 "log_id": log["log_id"],
                 "method": log["method"],
-                "time": log["timestamp"].strftime('%H:%M'),
-                "date": log["timestamp"].strftime('%d %b'),
+                "time": ts_wib.strftime('%H:%M'),
+                "date": ts_wib.strftime('%d %b'),
                 "grams_out": log["grams_out"]
             })
 
