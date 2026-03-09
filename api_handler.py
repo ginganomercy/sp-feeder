@@ -276,8 +276,12 @@ def init_api(app, bcrypt):
         )
 
         conn = get_db_connection(app)
-        cursor = conn.cursor(dictionary=True)
+        if not conn:
+            flash("Database gangguan. Silakan coba lagi.", "danger")
+            return redirect(url_for("setup_pet"))
+
         try:
+            cursor = conn.cursor(dictionary=True)
             # 1. Insert/update device — owner adalah user yang login
             cursor.execute(
                 """
@@ -327,8 +331,12 @@ def init_api(app, bcrypt):
             trigger_sync(app, client, db_id)
             session.pop("temp_pet_data", None)
             flash(f"Alat terhubung! Stok disetel ke {default_cap}g (100%).", "success")
+        except Exception as e:
+            flash(f"Terjadi kesalahan: {str(e)}", "danger")
+            return redirect(url_for("setup_pet"))
         finally:
-            conn.close()
+            if conn:
+                conn.close()
         return redirect(url_for("dashboard"))
 
     @app.route("/api/add_schedule", methods=["POST"])
