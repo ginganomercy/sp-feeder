@@ -83,11 +83,10 @@ def get_user_device_data(user_id):
         cursor = conn.cursor(dictionary=True)
         cursor.execute(
             """
-            SELECT d.device_id, d.device_sn, d.current_stock, d.max_capacity,
+            SELECT d.id as device_id, d.device_sn, d.current_stock, d.max_capacity,
                    p.name, p.species, p.category, p.weight_kg, p.kcal_per_kg, p.daily_target_grams
-            FROM pets p
-            JOIN devices d ON d.pet_id = p.pet_id
-            WHERE p.user_id = %s LIMIT 1
+            FROM devices d LEFT JOIN pets p ON d.id = p.device_id
+            WHERE d.owner_id = %s LIMIT 1
         """,
             (user_id,),
         )
@@ -95,6 +94,7 @@ def get_user_device_data(user_id):
     finally:
         if conn and conn.is_connected():
             conn.close()
+
 
 
 # ==========================================

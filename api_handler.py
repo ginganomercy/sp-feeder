@@ -31,27 +31,27 @@ def trigger_sync(app, mqtt_client, device_id_pk):
     try:
         conn = get_db_connection(app)
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT device_sn FROM devices WHERE device_id = %s", (device_id_pk,))
+        cursor.execute("SELECT device_sn FROM devices WHERE id = %s", (device_id_pk,))
         device = cursor.fetchone()
         if not device:
             return
 
         cursor.execute(
-            "SELECT time, grams_per_feed FROM feeding_schedules WHERE device_id = %s AND is_active = 1",
+            "SELECT waktu, porsi_gram FROM feeding_schedules WHERE device_id = %s AND is_active = 1",
             (device_id_pk,),
         )
         schedules = cursor.fetchall()
 
         formatted_sched = []
         for s in schedules:
-            t = s["time"]
+            t = s["waktu"]
             if isinstance(t, timedelta):
                 hours, remainder = divmod(t.seconds, 3600)
                 minutes = remainder // 60
                 time_str = f"{hours:02d}:{minutes:02d}"
             else:
                 time_str = str(t)[:5]
-            formatted_sched.append({"t": time_str, "p": s["grams_per_feed"]})
+            formatted_sched.append({"t": time_str, "p": s["porsi_gram"]})
 
         payload = json.dumps({"action": "sync", "schedules": formatted_sched})
         mqtt_client.publish(f"petfeed/{device['device_sn']}/perintah", payload, qos=1)
@@ -75,7 +75,7 @@ def generate_default_schedules(cursor, device_id, category, target_grams):
         porsi = round(target_grams / 3)
     for t in times:
         cursor.execute(
-            "INSERT INTO feeding_schedules (device_id, time, grams_per_feed, is_active) VALUES (%s, %s, %s, 1)",
+            "INSERT INTO feeding_schedules (device_id, waktu, porsi_gram, mode, is_active) VALUES (%s, %s, %s, 'system', 1)",
             (device_id, t, porsi),
         )
 
@@ -176,11 +176,11 @@ def init_api(app, bcrypt):
                 print(f"[DB] Device {device_id} not found in database (not registered)")
                 return
 
-            # Insert feeding log (device_id is FK to devices.id, not device_sn)
+            # Insert feeding log (device_id is FK integer to devices.id)
             cursor.execute(
                 """INSERT INTO feeding_logs (device_id, grams_out, method)
                    VALUES (%s, %s, %s)""",
-                (device_id, porsi, metode),  # Use device_sn directly as per schema
+                (device["id"], porsi, metode),
             )
 
             # Update current stock (prevent negative)
@@ -266,6 +266,7 @@ def init_api(app, bcrypt):
         if not pet:
             return redirect(url_for("setup_pet"))
 
+        # Kapasitas dari Config (600 gram)
         default_cap = app.config.get("DEFAULT_MAX_CAPACITY", 600)
         target = PetNutritionManager.calculate_daily_grams(
             pet["species"], pet["category"], pet["weight"], pet["kcal"]
@@ -274,14 +275,38 @@ def init_api(app, bcrypt):
         conn = get_db_connection(app)
         cursor = conn.cursor(dictionary=True)
         try:
-            # 1. Insert pet (relasi ke user, bukan ke device)
+            # 1. Insert/update device — owner adalah user yang login
             cursor.execute(
                 """
-                INSERT INTO pets (user_id, name, species, category, weight_kg, kcal_per_kg, daily_target_grams)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO devices (device_sn, owner_id, current_stock, max_capacity)
+                VALUES (%s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE owner_id = %s, current_stock = %s, max_capacity = %s
                 """,
                 (
+                    sn,
                     session["user_id"],
+                    default_cap,
+                    default_cap,
+                    session["user_id"],
+                    default_cap,
+                    default_cap,
+                ),
+            )
+
+            # 2. Ambil id device (PK integer)
+            cursor.execute("SELECT id FROM devices WHERE device_sn = %s", (sn,))
+            row = cursor.fetchone()
+            if not row:
+                flash("Gagal menemukan perangkat setelah registrasi.", "danger")
+                return redirect(url_for("setup_pet"))
+            db_id = row["id"]
+
+            # 3. Insert/update pet (relasi device_id FK ke devices.id)
+            cursor.execute("DELETE FROM pets WHERE device_id = %s", (db_id,))
+            cursor.execute(
+                "INSERT INTO pets (device_id, name, species, category, weight_kg, kcal_per_kg, daily_target_grams) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (
+                    db_id,
                     pet["name"],
                     pet["species"],
                     pet["category"],
@@ -290,25 +315,6 @@ def init_api(app, bcrypt):
                     target,
                 ),
             )
-            pet_id = cursor.lastrowid
-
-            # 2. Insert device (relasi ke pet)
-            cursor.execute(
-                """
-                INSERT INTO devices (pet_id, device_sn, max_capacity, current_stock)
-                VALUES (%s, %s, %s, %s)
-                ON DUPLICATE KEY UPDATE pet_id = %s, max_capacity = %s, current_stock = %s
-                """,
-                (pet_id, sn, default_cap, default_cap, pet_id, default_cap, default_cap),
-            )
-
-            # 3. Ambil device_id
-            cursor.execute("SELECT device_id FROM devices WHERE device_sn = %s", (sn,))
-            row = cursor.fetchone()
-            if not row:
-                flash("Gagal menemukan perangkat setelah registrasi.", "danger")
-                return redirect(url_for("setup_pet"))
-            db_id = row["device_id"]
 
             # 4. Generate jadwal default
             generate_default_schedules(cursor, db_id, pet["category"], target)
