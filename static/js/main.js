@@ -111,6 +111,18 @@ async function refreshLogs() {
 
         const data = await response.json();
         if (data.status === 'success') {
+            // Update Sisa Pakan UI
+            const stockVal = data.current_stock;
+            const maxCap = data.max_capacity || 600;
+            const percentage = Math.min(100, Math.round((stockVal / maxCap) * 100));
+
+            const stockFill = document.querySelector('.stock-fill');
+            const stockPercentageText = document.getElementById('stockPercentage');
+            const stockGramsText = document.getElementById('stockGrams');
+
+            if (stockFill) stockFill.style.height = percentage + '%';
+            if (stockPercentageText) stockPercentageText.textContent = percentage + '%';
+            if (stockGramsText) stockGramsText.textContent = '(' + stockVal + 'g)';
             const logContainer = document.querySelector('.log-scroll-area');
             if (!logContainer) return;
 

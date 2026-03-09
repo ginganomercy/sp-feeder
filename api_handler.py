@@ -332,17 +332,19 @@ def init_api(app, bcrypt):
         d_id = request.form.get("device_id")
         t, g = request.form.get("time"), request.form.get("grams")
         conn = get_db_connection(app)
-        cursor = conn.cursor()
-        cursor.execute(
-            "DELETE FROM feeding_schedules WHERE device_id = %s AND mode = 'system'", (d_id,)
-        )
-        cursor.execute(
-            "INSERT INTO feeding_schedules (device_id, waktu, porsi_gram, mode, is_active) VALUES (%s, %s, %s, 'manual', 1)",
-            (d_id, t, g),
-        )
-        conn.commit()
-        conn.close()
-        trigger_sync(app, client, d_id)
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM feeding_schedules WHERE device_id = %s AND mode = 'system'", (d_id,)
+            )
+            cursor.execute(
+                "INSERT INTO feeding_schedules (device_id, waktu, porsi_gram, mode, is_active) VALUES (%s, %s, %s, 'manual', 1)",
+                (d_id, t, g),
+            )
+            conn.commit()
+            trigger_sync(app, client, d_id)
+        finally:
+            conn.close()
         return redirect(url_for("schedules"))
 
     @app.route("/api/edit_schedule", methods=["POST"])
@@ -350,50 +352,56 @@ def init_api(app, bcrypt):
         s_id = request.form.get("schedule_id")
         t, g = request.form.get("time"), request.form.get("grams")
         conn = get_db_connection(app)
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT device_id, mode FROM feeding_schedules WHERE id = %s", (s_id,))
-        s = cursor.fetchone()
-        if s:
-            if s["mode"] == "system":
-                cursor.execute("UPDATE feeding_schedules SET waktu = %s WHERE id = %s", (t, s_id))
-            else:
-                cursor.execute(
-                    "UPDATE feeding_schedules SET waktu = %s, porsi_gram = %s WHERE id = %s",
-                    (t, g, s_id),
-                )
-            conn.commit()
-            trigger_sync(app, client, s["device_id"])
-        conn.close()
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT device_id, mode FROM feeding_schedules WHERE id = %s", (s_id,))
+            s = cursor.fetchone()
+            if s:
+                if s["mode"] == "system":
+                    cursor.execute("UPDATE feeding_schedules SET waktu = %s WHERE id = %s", (t, s_id))
+                else:
+                    cursor.execute(
+                        "UPDATE feeding_schedules SET waktu = %s, porsi_gram = %s WHERE id = %s",
+                        (t, g, s_id),
+                    )
+                conn.commit()
+                trigger_sync(app, client, s["device_id"])
+        finally:
+            conn.close()
         return redirect(url_for("schedules"))
 
     @app.route("/api/delete_schedule/<int:id>")
     def delete_schedule(id):
         conn = get_db_connection(app)
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT device_id FROM feeding_schedules WHERE id = %s", (id,))
-        s = cursor.fetchone()
-        if s:
-            d_id = s["device_id"]
-            cursor.execute("DELETE FROM feeding_schedules WHERE id = %s", (id,))
-            conn.commit()
-            trigger_sync(app, client, d_id)
-        conn.close()
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT device_id FROM feeding_schedules WHERE id = %s", (id,))
+            s = cursor.fetchone()
+            if s:
+                d_id = s["device_id"]
+                cursor.execute("DELETE FROM feeding_schedules WHERE id = %s", (id,))
+                conn.commit()
+                trigger_sync(app, client, d_id)
+        finally:
+            conn.close()
         return redirect(url_for("schedules"))
 
     @app.route("/api/apply_recommendation", methods=["POST"])
     def apply_recommendation():
         d_id = request.form.get("device_id")
         conn = get_db_connection(app)
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute(
-            "SELECT category, daily_target_grams FROM pets WHERE device_id = %s", (d_id,)
-        )
-        p = cursor.fetchone()
-        if p:
-            generate_default_schedules(cursor, d_id, p["category"], p["daily_target_grams"])
-            conn.commit()
-            trigger_sync(app, client, d_id)
-        conn.close()
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute(
+                "SELECT category, daily_target_grams FROM pets WHERE device_id = %s", (d_id,)
+            )
+            p = cursor.fetchone()
+            if p:
+                generate_default_schedules(cursor, d_id, p["category"], p["daily_target_grams"])
+                conn.commit()
+                trigger_sync(app, client, d_id)
+        finally:
+            conn.close()
         return redirect(url_for("schedules"))
 
     @app.route("/api/update_pet", methods=["POST"])
@@ -404,15 +412,17 @@ def init_api(app, bcrypt):
         kcal = int(request.form.get("kcal", 4000))
         target = PetNutritionManager.calculate_daily_grams(species, category, weight, kcal)
         conn = get_db_connection(app)
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE pets SET name=%s, species=%s, category=%s, weight_kg=%s, kcal_per_kg=%s, daily_target_grams=%s WHERE device_id=%s",
-            (name, species, category, weight, kcal, target, d_id),
-        )
-        generate_default_schedules(cursor, d_id, category, target)
-        conn.commit()
-        conn.close()
-        trigger_sync(app, client, d_id)
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE pets SET name=%s, species=%s, category=%s, weight_kg=%s, kcal_per_kg=%s, daily_target_grams=%s WHERE device_id=%s",
+                (name, species, category, weight, kcal, target, d_id),
+            )
+            generate_default_schedules(cursor, d_id, category, target)
+            conn.commit()
+            trigger_sync(app, client, d_id)
+        finally:
+            conn.close()
         return redirect(url_for("profile"))
 
     @app.route("/api/feed_now", methods=["POST"])
@@ -429,18 +439,20 @@ def init_api(app, bcrypt):
     def refill():
         d_id, amt = request.form.get("device_id"), request.form.get("amount")
         conn = get_db_connection(app)
-        cursor = conn.cursor()
-        # Mencegah stok melebihi max_capacity (600g)
-        cursor.execute(
-            "UPDATE devices SET current_stock = LEAST(max_capacity, current_stock + %s) WHERE id = %s",
-            (amt, d_id),
-        )
-        cursor.execute(
-            "INSERT INTO pantry_refills (device_id, grams_added) VALUES (%s, %s)", (d_id, amt)
-        )
-        conn.commit()
-        conn.close()
-        flash("Stok Pantry diperbarui.", "success")
+        try:
+            cursor = conn.cursor()
+            # Mencegah stok melebihi max_capacity (600g)
+            cursor.execute(
+                "UPDATE devices SET current_stock = LEAST(max_capacity, current_stock + %s) WHERE id = %s",
+                (amt, d_id),
+            )
+            cursor.execute(
+                "INSERT INTO pantry_refills (device_id, grams_added) VALUES (%s, %s)", (d_id, amt)
+            )
+            conn.commit()
+            flash("Stok Pantry diperbarui.", "success")
+        finally:
+            conn.close()
         return redirect(url_for("dashboard"))
 
     @app.route("/api/reset_password", methods=["POST"])
@@ -449,13 +461,15 @@ def init_api(app, bcrypt):
         if new_pw:
             pw_h = bcrypt.generate_password_hash(new_pw).decode("utf-8")
             conn = get_db_connection(app)
-            cursor = conn.cursor()
-            cursor.execute(
-                "UPDATE users SET password_hash = %s WHERE user_id = %s", (pw_h, session["user_id"])
-            )
-            conn.commit()
-            conn.close()
-            flash("Password diubah!", "success")
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "UPDATE users SET password_hash = %s WHERE user_id = %s", (pw_h, session["user_id"])
+                )
+                conn.commit()
+                flash("Password diubah!", "success")
+            finally:
+                conn.close()
         return redirect(url_for("profile"))
 
     @app.route("/api/reset_device")
@@ -463,16 +477,15 @@ def init_api(app, bcrypt):
         """Memperbaiki error reset alat dengan urutan delete yang benar."""
         user_id = session.get("user_id")
         conn = get_db_connection(app)
-        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor = conn.cursor(dictionary=True)
 
-        # Ambil info alat sebelum dihapus
-        cursor.execute("SELECT id, device_sn FROM devices WHERE owner_id = %s", (user_id,))
-        data = cursor.fetchone()
+            # Ambil info alat sebelum dihapus
+            cursor.execute("SELECT id, device_sn FROM devices WHERE owner_id = %s", (user_id,))
+            data = cursor.fetchone()
 
-        if data:
-            d_pk = data["id"]  # ID integer (PK)
-
-            try:
+            if data:
+                d_pk = data["id"]  # ID integer (PK)
                 # 1. Hapus Feeding Logs (FK integer ke devices.id)
                 cursor.execute("DELETE FROM feeding_logs WHERE device_id = %s", (d_pk,))
                 # 2. Hapus Pantry Refills (menggunakan device_id FK)
@@ -486,10 +499,11 @@ def init_api(app, bcrypt):
 
                 conn.commit()
                 flash("Alat berhasil di-reset dan dilepaskan.", "info")
-            except Exception as e:
-                conn.rollback()
-                print(f"[RESET ERROR] {e}")
-                flash("Gagal mereset alat. Silakan coba lagi.", "danger")
+        except Exception as e:
+            conn.rollback()
+            print(f"[RESET ERROR] {e}")
+            flash("Gagal mereset alat. Silakan coba lagi.", "danger")
+        finally:
+            conn.close()
 
-        conn.close()
         return redirect(url_for("onboarding_choice"))

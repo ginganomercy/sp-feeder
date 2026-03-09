@@ -365,7 +365,12 @@ def get_logs():
                 "grams_out": log["grams_out"]
             })
 
-        return jsonify({"status": "success", "logs": formatted_logs})
+        return jsonify({
+            "status": "success",
+            "logs": formatted_logs,
+            "current_stock": data["current_stock"],
+            "max_capacity": data["max_capacity"]
+        })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
     finally:
