@@ -336,6 +336,42 @@ def scan_device():
     return render_template("onboarding/scan_device.html")
 
 
+@app.route("/api/logs")
+def get_logs():
+    if "user_id" not in session:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    
+    data = get_user_device_data(session["user_id"])
+    if not data:
+        return jsonify({"status": "error", "message": "No device"}), 404
+        
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT method, timestamp, grams_out FROM feeding_logs WHERE device_id = %s ORDER BY timestamp DESC LIMIT 10",
+            (data["device_id"],),
+        )
+        logs = cursor.fetchall()
+        
+        # Format dates for JSON
+        formatted_logs = []
+        for log in logs:
+            formatted_logs.append({
+                "method": log["method"],
+                "time": log["timestamp"].strftime('%H:%M'),
+                "date": log["timestamp"].strftime('%d %b'),
+                "grams_out": log["grams_out"]
+            })
+            
+        return jsonify({"status": "success", "logs": formatted_logs})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
+
 if __name__ == "__main__":
     import os
 
