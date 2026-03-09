@@ -1,6 +1,7 @@
 import hashlib
 import json
 import ssl
+import threading
 import time
 from datetime import timedelta
 
@@ -229,13 +230,31 @@ def init_api(app, bcrypt):
     client.on_connect = on_connect
     client.on_message = on_message
 
-    # Enable TLS for port 8883 (matches firmware Config.h MQTT_PORT=8883)
+    # TLS hanya untuk broker eksternal (port 8883)
+    # Internal mosquitto Docker pakai plain 1883 — tidak butuh TLS
     if MQTT_PORT == 8883:
         client.tls_set(cert_reqs=ssl.CERT_NONE)
-        client.tls_insecure_set(True)  # Accept self-signed / public broker cert
+        client.tls_insecure_set(True)
 
-    client.connect(MQTT_BROKER, MQTT_PORT, MQTT_KEEPALIVE)
-    client.loop_start()
+    # Non-fatal MQTT connect: jalankan di background thread dengan retry
+    # App tetap serve HTTP meskipun broker belum ready
+    _MAX_MQTT_RETRIES = 10
+    _MQTT_RETRY_DELAY = 5  # detik
+
+    def _mqtt_connect_with_retry():
+        for attempt in range(1, _MAX_MQTT_RETRIES + 1):
+            try:
+                client.connect(MQTT_BROKER, MQTT_PORT, MQTT_KEEPALIVE)
+                client.loop_start()
+                print(f"[MQTT] Connected to {MQTT_BROKER}:{MQTT_PORT} (attempt {attempt})")
+                return
+            except Exception as exc:
+                print(f"[MQTT] Attempt {attempt}/{_MAX_MQTT_RETRIES} failed: {exc}")
+                if attempt < _MAX_MQTT_RETRIES:
+                    time.sleep(_MQTT_RETRY_DELAY)
+        print(f"[MQTT] All {_MAX_MQTT_RETRIES} attempts failed — MQTT features unavailable.")
+
+    threading.Thread(target=_mqtt_connect_with_retry, daemon=True).start()
 
     # --- ROUTES API ---
 

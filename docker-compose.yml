@@ -8,11 +8,13 @@ services:
       - "5011:5011"
     env_file:
       - .env.docker
+    environment:
+      # Override .env.docker: internal Docker pakai plain 1883, bukan TLS 8883
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
     depends_on:
       db:
         condition: service_healthy
-      mosquitto:
-        condition: service_started
     networks:
       - petfeeder-network
     volumes:
