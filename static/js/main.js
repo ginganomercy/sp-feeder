@@ -212,7 +212,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logArea) {
         logArea.scrollTop = 0;
 
-        // Mulai polling logs setiap 4 detik hanya jika berada di halaman dashboard
-        logPollingInterval = setInterval(refreshLogs, 4000);
+        // Mulai mendengarkan Server-Sent Events (SSE) dari Backend alih-alih Polling
+        const sse = new EventSource('/api/stream');
+        sse.onmessage = function (event) {
+            console.log("SSE Real-Time Event Triggered:", event.data);
+            refreshLogs(); // Panggil hanya jika ada sinyal mutasi data
+        };
+        sse.onerror = function (err) {
+            console.log("SSE Connection lost. Browser will auto-reconnect...", err);
+        };
     }
 });

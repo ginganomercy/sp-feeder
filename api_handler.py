@@ -11,6 +11,7 @@ from flask import flash, jsonify, redirect, request, session, url_for
 
 from db_pool import db_pool
 from nutrition_logic import PetNutritionManager
+from sse import sse_announcer
 
 # Memori cache untuk mencegah pesan ganda (Anti-Duplikasi)
 mqtt_cache = {}
@@ -188,6 +189,9 @@ def init_api(app, bcrypt):
             )
 
             conn.commit()
+
+            # Trigger SSE Real-Time Update
+            sse_announcer.announce({"device_id": device["id"]})
 
             device_name = device.get("nickname") or device_id
             print(
@@ -473,6 +477,8 @@ def init_api(app, bcrypt):
                 "INSERT INTO pantry_refills (device_id, grams_added) VALUES (%s, %s)", (d_id, amt)
             )
             conn.commit()
+            # Trigger SSE Update untuk tampilan Web
+            sse_announcer.announce({"device_id": int(d_id)})
             flash("Stok Pantry diperbarui.", "success")
         finally:
             if conn:

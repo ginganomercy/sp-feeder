@@ -1,7 +1,8 @@
+import json
 from datetime import datetime, timedelta
 
 import mysql.connector
-from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import Flask, Response, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_bcrypt import Bcrypt
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -11,6 +12,7 @@ from db_pool import db_pool
 
 # Import new infrastructure modules
 from logger_config import get_logger, setup_logging
+from sse import sse_announcer
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -406,6 +408,30 @@ def get_logs():
         if conn and conn.is_connected():
             cursor.close()
             conn.close()
+
+@app.route("/api/stream")
+def stream():
+    if "user_id" not in session:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+
+    data = get_user_device_data(session["user_id"])
+    if not data:
+        return jsonify({"status": "error", "message": "No device"}), 404
+
+    device_id = data["device_id"]
+
+    def event_generator():
+        q = sse_announcer.listen()
+        try:
+            while True:
+                msg = q.get()  # Block until a message is received
+                if msg.get("device_id") == device_id:
+                    # Return formatted SSE string
+                    yield f"data: {json.dumps(msg)}\\n\\n"
+        except GeneratorExit:
+            pass  # Client disconnected
+
+    return Response(event_generator(), mimetype='text/event-stream')
 
 if __name__ == "__main__":
     import os
