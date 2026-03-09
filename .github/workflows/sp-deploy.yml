@@ -98,13 +98,11 @@ jobs:
 
       - name: Sync docker-compose to server
         run: |
-          # Pastikan direktori docker/mysql ada di server
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "mkdir -p ${{ secrets.DEPLOY_PATH }}/docker/mysql && \
-             rm -rf ${{ secrets.DEPLOY_PATH }}/docker/mysql/init.sql"
           rsync -avz \
             docker-compose.yml \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "mkdir -p ${{ secrets.DEPLOY_PATH }}/docker/mysql"
           rsync -avz \
             docker/mysql/init.sql \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/docker/mysql/init.sql
