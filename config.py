@@ -31,3 +31,13 @@ class Config:
 
     # Flask Configuration
     DEBUG = os.getenv("FLASK_DEBUG", "True").lower() in ("true", "1", "yes")
+
+    # Domain & HTTPS Configuration
+    # Digunakan untuk url_for() dengan _external=True dan secure cookies
+    APP_DOMAIN = os.getenv("APP_DOMAIN", "localhost")
+    PREFERRED_URL_SCHEME = os.getenv("PREFERRED_URL_SCHEME", "http")
+
+    # Session security — aktifkan di production (HTTPS)
+    SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "False").lower() in ("true", "1", "yes")
+    SESSION_COOKIE_HTTPONLY = True   # Selalu: cegah akses cookie via JavaScript
+    SESSION_COOKIE_SAMESITE = "Lax" # Proteksi CSRF dasar
